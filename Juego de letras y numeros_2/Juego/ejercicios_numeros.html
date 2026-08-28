@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ejercicios Prácticos - Sumas y Restas</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --secondary: #6366f1;
+            --bg: #f1f5f9;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --border-radius: 24px;
+            --box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+            --gradient-start: #4f46e5;
+            --gradient-end: #818cf8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            background: radial-gradient(circle at top left, #eef2ff, var(--bg));
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 24px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: white;
+            padding: 24px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            position: relative;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        header h1 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-icon {
+            font-size: 2rem;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+        }
+
+        .header-nav-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .info-badge {
+            background: rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(12px);
+            padding: 8px 16px;
+            border-radius: 99px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-reset, .btn-home-header {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            border-radius: 12px;
+            color: white;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            font-weight: 700;
+            backdrop-filter: blur(8px);
+        }
+
+        .btn-reset:hover, .btn-home-header:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-reset:active, .btn-home-header:active {
+            transform: translateY(0);
+        }
+
+        main {
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .instruction-card {
+            width: 100%;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-left: 5px solid var(--success);
+            padding: 16px 20px;
+            border-radius: 16px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #166534;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+        }
+
+        #feedback {
+            width: 100%;
+            font-size: 1.15rem;
+            font-weight: 700;
+            min-height: 56px;
+            text-align: center;
+            padding: 14px 20px;
+            border-radius: 16px;
+            background: #f8fafc;
+            border: 2px dashed var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .game-zone {
+            display: flex;
+            gap: 24px;
+            width: 100%;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .math-card {
+            width: 320px;
+            height: 300px;
+            border: 2px solid var(--border);
+            border-radius: var(--border-radius);
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.03);
+            padding: 24px;
+            position: relative;
+            transition: transform 0.3s ease;
+        }
+
+        .math-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .operation-badge {
+            position: absolute;
+            top: 20px;
+            left: 24px;
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: var(--bg);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .math-expression {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .result-box {
+            width: 75px;
+            height: 85px;
+            border: 3px dashed var(--primary);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: 800;
+            background: var(--bg);
+            color: var(--success);
+            transition: all 0.3s ease;
+        }
+
+        .result-box.active {
+            animation: pulse 1.2s infinite alternate ease-in-out;
+            border-color: var(--warning);
+            background: #fffbeb;
+            color: var(--warning);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.2); }
+            100% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(217, 119, 6, 0); }
+        }
+
+        .camera-card {
+            width: 320px;
+            height: 300px;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            position: relative;
+            background: #0f172a;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border: 3px solid var(--secondary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .card-label {
+            position: absolute;
+            top: 14px;
+            left: 16px;
+            font-weight: 800;
+            color: #ffffff;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            padding: 4px 10px;
+            border-radius: 8px;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.8px;
+            z-index: 10;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        #webcam-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        #webcam-container canvas {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover;
+            display: block;
+        }
+
+        .scanning-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            border: 3px solid rgba(255, 255, 255, 0.15);
+            box-sizing: border-box;
+            pointer-events: none;
+            animation: scanning 2s infinite ease-in-out;
+            border-radius: calc(var(--border-radius) - 3px);
+        }
+
+        .scanning-corner {
+            position: absolute; width: 24px; height: 24px;
+            border-color: var(--gradient-end);
+            border-style: solid; border-width: 0; border-radius: 6px;
+        }
+
+        .scanning-corner.tl { top: 16px; left: 16px; border-top-width: 4px; border-left-width: 4px; }
+        .scanning-corner.tr { top: 16px; right: 16px; border-top-width: 4px; border-right-width: 4px; }
+        .scanning-corner.bl { bottom: 16px; left: 16px; border-bottom-width: 4px; border-left-width: 4px; }
+        .scanning-corner.br { bottom: 16px; right: 16px; border-bottom-width: 4px; border-right-width: 4px; }
+
+        @keyframes scanning {
+            0%, 100% { border-color: rgba(255, 255, 255, 0.15); box-shadow: inset 0 0 15px rgba(79, 70, 229, 0); }
+            50% { border-color: rgba(99, 102, 241, 0.5); box-shadow: inset 0 0 25px rgba(79, 70, 229, 0.25); }
+        }
+
+        .progress-container {
+            width: 100%;
+            margin-top: 10px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-weight: 700;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .progress-bar {
+            height: 14px;
+            background-color: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 99px;
+            overflow: hidden;
+            padding: 2px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+            border-radius: 99px;
+            width: 0%;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-card {
+            background: white;
+            padding: 40px 32px;
+            border-radius: var(--border-radius);
+            text-align: center;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            transform: scale(1);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        .score-box {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 16px;
+            margin: 20px 0;
+            border: 1px solid var(--border);
+        }
+
+        .score-box h3 { font-size: 2.5rem; color: var(--primary); font-weight: 800; }
+
+        .btn-action {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn-action-secondary {
+            background: #f1f5f9;
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            padding: 14px 24px;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+
+        .btn-action-secondary:hover {
+            background: #e2e8f0;
+            color: var(--text);
+            transform: translateY(-2px);
+        }
+
+        footer {
+            text-align: center;
+            padding: 18px;
+            background: #fafafa;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 12px; }
+            header { flex-direction: column; text-align: center; padding: 20px; justify-content: center; }
+            .header-left { flex-direction: column; }
+            .header-info { width: 100%; justify-content: center; }
+            main { padding: 20px; }
+            .game-zone { flex-direction: column; align-items: center; }
+            .math-card, .camera-card { width: 100%; max-width: 320px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <span class="header-icon">🧮</span>
+                <h1>Operaciones Matemáticas</h1>
+            </div>
+
+            <div class="header-nav-buttons">
+                <a href="index_letras_numeros.html" class="btn-home-header">🏠 Menú Principal</a>
+            </div>
+
+            <div class="header-info">
+                <div class="info-badge">
+                    <span>⭐</span>
+                    <span id="scoreText">Puntos: 0</span>
+                </div>
+                <div class="info-badge">
+                    <span>🔢</span>
+                    <span id="roundText">Operación 1 / 4</span>
+                </div>
+                <button id="btnQuickReset" class="btn-reset" title="Reiniciar juego">↺</button>
+            </div>
+        </header>
+
+        <main>
+            <div class="instruction-card">
+                <span style="font-size: 1.5rem;">💡</span>
+                <span>Calcula la respuesta y coloca la tarjeta del número frente a la cámara para responder.</span>
+            </div>
+
+            <div id="feedback">Iniciando cámara y modelo de visión artificial...</div>
+
+            <div class="game-zone">
+                <div class="math-card">
+                    <div id="operationType" class="operation-badge">Suma</div>
+                    <div class="math-expression">
+                        <span id="num1">0</span>
+                        <span id="operator">+</span>
+                        <span id="num2">0</span>
+                        <span>=</span>
+                        <div id="resultBox" class="result-box active">?</div>
+                    </div>
+                </div>
+
+                <div class="camera-card">
+                    <span class="card-label">Tu cámara:</span>
+                    <div id="webcam-container"></div>
+                    <div class="scanning-overlay">
+                        <div class="scanning-corner tl"></div>
+                        <div class="scanning-corner tr"></div>
+                        <div class="scanning-corner bl"></div>
+                        <div class="scanning-corner br"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-header">
+                    <span>📊 Progreso</span>
+                    <span id="progressText">0/4 operaciones completadas</span>
+                </div>
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Actividad práctica de razonamiento matemático 🎓</p>
+        </footer>
+    </div>
+
+    <!-- Modal de Victoria -->
+    <div id="winModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+            <div style="font-size: 3.5rem; margin-bottom: 10px;">🏆🌟</div>
+            <h2 style="color: var(--text); font-size: 1.8rem; margin-bottom: 10px;">¡Genio Matemático!</h2>
+            <p id="winModalMessage" style="color: var(--text-muted); font-size: 1rem; margin-bottom: 20px;">
+                Has completado todos los ejercicios.
+            </p>
+            <div class="score-box">
+                <p style="font-weight: 600; color: var(--text-muted);">PUNTUACIÓN FINAL</p>
+                <h3 id="finalScoreText">0 Pts</h3>
+            </div>
+            <div style="display: flex; gap: 10px; flex-direction: column;">
+                <button id="btnRestart" class="btn-action">
+                    ↺ Resolver Más Operaciones
+                </button>
+                <button id="btnExitMenu" class="btn-action-secondary">
+                    🏠 Salir al Menú Principal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+    <script>
+        const URL_MODELO = 'https://teachablemachine.withgoogle.com/models/KW-qv5rO4/';
+
+        let score = 0;
+        let currentRound = 0;
+        const TOTAL_ROUNDS = 4;
+        let operationsList = [];
+        let currentExpectedResult = 0;
+
+        let model, webcam, maxPredictions;
+        let isCameraReady = false;
+        let isProcessingMatch = false;
+        let lastDetectionTime = 0; // Controla el temporizador entre detecciones
+
+        // Elementos DOM
+        const scoreText = document.getElementById('scoreText');
+        const roundText = document.getElementById('roundText');
+        const num1El = document.getElementById('num1');
+        const num2El = document.getElementById('num2');
+        const operatorEl = document.getElementById('operator');
+        const operationTypeEl = document.getElementById('operationType');
+        const resultBox = document.getElementById('resultBox');
+        const feedback = document.getElementById('feedback');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const winModal = document.getElementById('winModal');
+        const finalScoreText = document.getElementById('finalScoreText');
+
+        // Event Listeners
+        document.getElementById('btnRestart').addEventListener('click', startNewGame);
+        document.getElementById('btnQuickReset').addEventListener('click', startNewGame);
+        document.getElementById('btnExitMenu').addEventListener('click', () => {
+            window.location.href = 'index_letras_numeros.html';
+        });
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.85;
+                utterance.lang = 'es-ES';
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function normalizePredictionLabel(label) {
+            const value = String(label || '').trim().toUpperCase();
+            const wordMap = {
+                'CERO': '0', 'ZERO': '0', 'UNO': '1', 'ONE': '1',
+                'DOS': '2', 'TWO': '2', 'TRES': '3', 'THREE': '3',
+                'CUATRO': '4', 'FOUR': '4', 'CINCO': '5', 'FIVE': '5',
+                'SEIS': '6', 'SIX': '6', 'SIETE': '7', 'SEVEN': '7',
+                'OCHO': '8', 'EIGHT': '8', 'NUEVE': '9', 'NINE': '9'
+            };
+            if (wordMap[value]) return wordMap[value];
+            return value.replace(/[^0-9]/g, '');
+        }
+
+        function isIgnoredClass(label) {
+            const value = String(label || '').trim().toUpperCase();
+            return value.includes('FONDO') || 
+                   value.includes('NINGUNA') || 
+                   value.includes('BACKGROUND') || 
+                   value.includes('NONE') || 
+                   value.includes('NADA') || 
+                   value === '';
+        }
+
+        function generateOperations() {
+            let ops = [];
+            
+            // Generación de Sumas (resultado distinto de 4)
+            while (ops.filter(o => o.type === 'suma').length < 2) {
+                let a = Math.floor(Math.random() * 10);
+                let maxB = 9 - a;
+                let b = Math.floor(Math.random() * (maxB + 1));
+                let res = a + b;
+                
+                if (res !== 4) {
+                    ops.push({ type: 'suma', n1: a, n2: b, opSymbol: '+', result: res });
+                }
+            }
+            
+            // Generación de Restas (resultado distinto de 4)
+            while (ops.filter(o => o.type === 'resta').length < 2) {
+                let a = Math.floor(Math.random() * 10);
+                let b = Math.floor(Math.random() * (a + 1));
+                let res = a - b;
+                
+                if (res !== 4) {
+                    ops.push({ type: 'resta', n1: a, n2: b, opSymbol: '-', result: res });
+                }
+            }
+
+            return ops.sort(() => 0.5 - Math.random());
+        }
+
+        async function initAI() {
+            try {
+                const modelURL = URL_MODELO + 'model.json';
+                const metadataURL = URL_MODELO + 'metadata.json';
+
+                model = await tmImage.load(modelURL, metadataURL);
+                maxPredictions = model.getTotalClasses();
+
+                webcam = new tmImage.Webcam(340, 290, true);
+                await webcam.setup();
+                await webcam.play();
+
+                document.getElementById('webcam-container').appendChild(webcam.canvas);
+                isCameraReady = true;
+
+                startNewGame();
+                requestAnimationFrame(loop);
+            } catch (e) {
+                feedback.textContent = "⚠️ Error al inicializar la cámara o el modelo";
+                feedback.style.color = "var(--error)";
+                feedback.style.background = "#fef2f2";
+                console.error(e);
+            }
+        }
+
+        async function loop() {
+            if (webcam && isCameraReady) {
+                webcam.update();
+                if (!isProcessingMatch && operationsList.length > 0) {
+                    await predict();
+                }
+            }
+            requestAnimationFrame(loop);
+        }
+
+        function startNewGame() {
+            winModal.style.display = 'none';
+            score = 0;
+            currentRound = 0;
+            lastDetectionTime = 0;
+            scoreText.textContent = `Puntos: ${score}`;
+            operationsList = generateOperations();
+            loadRound(currentRound);
+        }
+
+        function updateProgress() {
+            const progress = (currentRound / TOTAL_ROUNDS) * 100;
+            progressFill.style.width = `${progress}%`;
+            progressText.textContent = `${currentRound}/${TOTAL_ROUNDS} operaciones completadas`;
+        }
+
+        function loadRound(roundIndex) {
+            currentRound = roundIndex;
+            roundText.textContent = `Operación ${currentRound + 1} / ${TOTAL_ROUNDS}`;
+
+            const currentOp = operationsList[currentRound];
+            currentExpectedResult = currentOp.result;
+
+            num1El.textContent = currentOp.n1;
+            num2El.textContent = currentOp.n2;
+            operatorEl.textContent = currentOp.opSymbol;
+            operationTypeEl.textContent = currentOp.type === 'suma' ? '➕ Suma' : '➖ Resta';
+
+            resultBox.textContent = '?';
+            resultBox.className = 'result-box active';
+            resultBox.style.color = 'var(--text)';
+
+            feedback.textContent = "Muestra la tarjeta del resultado a la cámara";
+            feedback.style.color = "var(--primary)";
+            feedback.style.background = "var(--bg)";
+
+            updateProgress();
+
+            const promptText = currentOp.type === 'suma'
+                ? `¿Cuánto es ${currentOp.n1} más ${currentOp.n2}? Muestra el resultado.`
+                : `¿Cuánto es ${currentOp.n1} menos ${currentOp.n2}? Muestra el resultado.`;
+
+            speak(promptText);
+        }
+
+        async function predict() {
+            if (!model || !webcam || isProcessingMatch) return;
+
+            // Bloqueo por temporizador: ignora lecturas si han pasado menos de 3.5 segundos desde la última penalización o acierto
+            if (Date.now() - lastDetectionTime < 3500) return;
+
+            const prediction = await model.predict(webcam.canvas);
+
+            let highestProb = 0;
+            let rawBestClass = "";
+
+            for (let i = 0; i < maxPredictions; i++) {
+                if (prediction[i].probability > highestProb) {
+                    highestProb = prediction[i].probability;
+                    rawBestClass = prediction[i].className;
+                }
+            }
+
+            // Ignorar clases "NADA", "FONDO", etc.
+            if (isIgnoredClass(rawBestClass)) return;
+
+            const detectedNumber = normalizePredictionLabel(rawBestClass);
+
+            if (detectedNumber === "") return;
+
+            if (parseInt(detectedNumber, 10) === currentExpectedResult) {
+                // Requiere 95% de confianza (0.95) para darlo como correcto
+                if (highestProb >= 0.95) {
+                    lastDetectionTime = Date.now();
+                    handleSuccessMatch(detectedNumber);
+                }
+            } else {
+                // Requiere 75% de confianza (0.75) para penalizar
+                if (highestProb >= 0.75) {
+                    lastDetectionTime = Date.now();
+                    handleErrorMatch(detectedNumber);
+                }
+            }
+        }
+
+        function handleSuccessMatch(detectedNumber) {
+            isProcessingMatch = true;
+
+            score += 10;
+            scoreText.textContent = `Puntos: ${score}`;
+
+            resultBox.textContent = detectedNumber;
+            resultBox.classList.remove('active');
+            resultBox.style.color = 'var(--success)';
+
+            feedback.textContent = `🎉 ¡Correcto! El resultado es ${detectedNumber} (+10 pts).`;
+            feedback.style.color = "var(--success)";
+            feedback.style.background = "#dcfce7";
+
+            speak(`¡Excelente! El resultado es ${detectedNumber}`);
+
+            setTimeout(() => {
+                isProcessingMatch = false;
+                if (currentRound + 1 < TOTAL_ROUNDS) {
+                    loadRound(currentRound + 1);
+                } else {
+                    currentRound = TOTAL_ROUNDS;
+                    updateProgress();
+                    showWinModal();
+                }
+            }, 3000);
+        }
+
+        function handleErrorMatch(detectedNumber) {
+            isProcessingMatch = true;
+
+            score = Math.max(0, score - 5);
+            scoreText.textContent = `Puntos: ${score}`;
+
+            feedback.textContent = `❌ Mostraste el ${detectedNumber}, es incorrecto (-5 pts). ¡Retira la tarjeta!`;
+            feedback.style.color = "var(--error)";
+            feedback.style.background = "#fef2f2";
+
+            speak(`Incorrecto. Mostraste el número ${detectedNumber}. Retira la tarjeta e intenta de nuevo.`);
+
+            // Otorga 3.5 segundos para que el niño retire la tarjeta de la cámara
+            setTimeout(() => {
+                feedback.textContent = "Muestra la tarjeta del resultado a la cámara";
+                feedback.style.color = "var(--primary)";
+                feedback.style.background = "var(--bg)";
+                isProcessingMatch = false;
+            }, 3500);
+        }
+
+        function showWinModal() {
+            winModal.style.display = 'flex';
+            finalScoreText.textContent = `${score} / 40 Pts`;
+            speak(`¡Felicidades! Has completado todas las operaciones con ${score} puntos.`);
+        }
+
+        window.addEventListener('DOMContentLoaded', initAI);
+    </script>
+</body>
+</html>

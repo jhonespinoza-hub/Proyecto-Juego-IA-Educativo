@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aprendamos las Letras</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --secondary: #6366f1;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #16a34a;
+            --error: #dc2626;
+            --warning: #d97706;
+            --border-radius: 16px;
+            --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            --gradient-start: #4f46e5;
+            --gradient-end: #6366f1;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: white;
+            padding: 25px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .header-icon {
+            font-size: 2.2rem;
+        }
+
+        .header-nav-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .info-badge {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 8px 18px;
+            border-radius: 25px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .current-letter {
+            background: white;
+            color: var(--primary);
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 1.8rem;
+            font-weight: 700;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .current-letter.letter-pulse {
+            animation: letterPulse 0.6s ease;
+        }
+
+        @keyframes letterPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); background: #fef08a; color: var(--text); }
+        }
+
+        .btn-reset, .btn-practice-header, .btn-home-header {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            color: white;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .btn-reset:hover, .btn-practice-header:hover, .btn-home-header:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        main {
+            padding: 30px;
+        }
+
+        .media-container {
+            width: 100%;
+            margin-bottom: 25px;
+        }
+
+        .video-column {
+            width: 100%;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+            border: 1px solid var(--border);
+        }
+
+        .video-column iframe {
+            width: 100% !important;
+            height: 400px !important;
+            border: 0;
+            display: block;
+        }
+
+        /* CONTENEDOR INTERACTIVO */
+        .interactive-container {
+            display: none;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+            margin: 10px 0 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .card-preview {
+            width: 280px;
+            height: 320px;
+            background: #ffffff;
+            border: 2px solid var(--border);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--box-shadow);
+        }
+
+        .card-preview h3 {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+
+        .card-preview .image-box {
+            width: 100%;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px dashed var(--border);
+            margin: 5px 0;
+        }
+
+        .card-preview img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+
+        .card-preview p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .camera-view {
+            position: relative;
+            width: 320px;
+            height: 320px;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+            background: #000;
+            border: 3px solid var(--secondary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #webcam-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        #webcam-container canvas {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover;
+            display: block;
+        }
+
+        .scanning-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            box-sizing: border-box;
+            pointer-events: none;
+            animation: scanning 1.5s infinite ease-in-out;
+            border-radius: var(--border-radius);
+        }
+
+        .scanning-corner {
+            position: absolute; width: 30px; height: 30px;
+            border-color: var(--primary);
+            border-style: solid; border-width: 0; border-radius: 4px;
+        }
+
+        .scanning-corner.tl { top: 15px; left: 15px; border-top-width: 4px; border-left-width: 4px; }
+        .scanning-corner.tr { top: 15px; right: 15px; border-top-width: 4px; border-right-width: 4px; }
+        .scanning-corner.bl { bottom: 15px; left: 15px; border-bottom-width: 4px; border-left-width: 4px; }
+        .scanning-corner.br { bottom: 15px; right: 15px; border-bottom-width: 4px; border-right-width: 4px; }
+
+        @keyframes scanning {
+            0%, 100% { border-color: rgba(255, 255, 255, 0.3); box-shadow: 0 0 20px rgba(79, 70, 229, 0); }
+            50% { border-color: var(--primary); box-shadow: 0 0 30px rgba(79, 70, 229, 0.3); }
+        }
+
+        #statusBox {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        #instructionBox {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: white;
+            padding: 18px 25px;
+            border-radius: var(--border-radius);
+            margin: 15px 0;
+            box-shadow: var(--box-shadow);
+            font-size: 1.2rem;
+            text-align: center;
+            display: inline-block;
+        }
+
+        #instructionBox strong {
+            font-size: 2rem;
+            background: white;
+            color: var(--primary);
+            padding: 0 12px;
+            border-radius: 8px;
+            display: inline-block;
+            min-width: 50px;
+        }
+
+        #feedback {
+            font-weight: 600;
+            margin: 15px 0;
+            min-height: 36px;
+            font-size: 1.2rem;
+            padding: 10px 20px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            text-align: center;
+            display: none;
+        }
+
+        .feedback-correct {
+            color: var(--success);
+            background: #dcfce7;
+            border: 1px solid #bbf7d0;
+        }
+
+        .feedback-warning {
+            color: var(--warning);
+            background: #fef3c7;
+            border: 1px solid #fde68a;
+        }
+
+        #scanStatus {
+            font-style: italic;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .progress-container {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            height: 20px;
+            background-color: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, var(--gradient-start), var(--gradient-end));
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.6s ease;
+        }
+
+        /* Modales */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-card {
+            background: white;
+            padding: 35px;
+            border-radius: var(--border-radius);
+            text-align: center;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 1px solid var(--border);
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+
+        .btn-action:hover {
+            transform: scale(1.02);
+        }
+
+        .btn-action-secondary {
+            background: #64748b;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+
+        .btn-action-secondary:hover {
+            transform: scale(1.02);
+        }
+
+        footer {
+            text-align: center;
+            padding: 18px;
+            background: var(--bg);
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            header { flex-direction: column; text-align: center; padding: 20px; }
+            .header-info { width: 100%; justify-content: center; }
+            .media-container iframe { height: 260px !important; }
+            .interactive-container { flex-direction: column; }
+            .card-preview, .camera-view { width: 100%; max-width: 320px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <span class="header-icon">🔤</span>
+                <h1>Aprendamos las Letras</h1>
+            </div>
+
+            <div class="header-nav-buttons">
+                <a href="index_letras_numeros.html" class="btn-home-header">🏠 Menú Principal</a>
+                <a href="ejercicios_practicos_letras.html" class="btn-practice-header">✏️ Ejercicios ➔</a>
+            </div>
+
+            <div class="header-info">
+                <div class="info-badge">
+                    <span>⭐</span>
+                    <span id="scoreValue">0</span>
+                </div>
+                <div class="info-badge">
+                    <span>🔤</span>
+                    <div id="currentLetter" class="current-letter">-</div>
+                </div>
+                <button id="resetBtn" class="btn-reset" title="Reiniciar juego">↺</button>
+            </div>
+        </header>
+
+        <main>
+            <div id="mediaContainer" class="media-container">
+                <div class="video-column" id="videoColumn">
+                    <div id="youtubePlayer"></div>
+                </div>
+
+                <div id="interactiveContainer" class="interactive-container">
+                    <div class="card-preview">
+                        <h3>🎴 Seña/Letra a buscar</h3>
+                        <div class="image-box">
+                            <img id="targetCardImage" src="" alt="Guía" onerror="this.src='https://dummyimage.com/200x200/4f46e5/ffffff.png&text=Letra'">
+                        </div>
+                        <p>Muestra esta seña a la cámara</p>
+                    </div>
+
+                    <div class="camera-view">
+                        <div id="webcam-container"></div>
+                        <div class="scanning-overlay">
+                            <div class="scanning-corner tl"></div>
+                            <div class="scanning-corner tr"></div>
+                            <div class="scanning-corner bl"></div>
+                            <div class="scanning-corner br"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="statusBox">
+                <div id="instructionBox" style="display: none;">
+                    📷 Muestra la seña de la letra <strong id="expectedLetterText">A</strong>
+                </div>
+                <div id="feedback"></div>
+                <p id="scanStatus">Cargando la IA...</p>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-header">
+                    <span>📊 Progreso</span>
+                    <span id="progressText">0/0 letras completadas</span>
+                </div>
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Actividad educativa para aprender el alfabeto 🎓</p>
+        </footer>
+    </div>
+
+    <!-- Modal Final (Ventana de Victoria) -->
+    <div id="completionModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+            <div style="font-size: 3.5rem; margin-bottom: 10px;">🏆🎉</div>
+            <h2 style="color: var(--text); font-size: 1.8rem; margin-bottom: 10px;">¡Repaso Completado!</h2>
+            <p style="color: var(--text-muted); font-size: 1rem; margin-bottom: 20px;">
+                Has repasado exitosamente todas las letras del alfabeto.
+            </p>
+            <div style="display: flex; gap: 10px; flex-direction: column;">
+                <button id="btnRepeatReview" class="btn-action">
+                    ↺ Repetir Repaso
+                </button>
+                <button id="btnGoToExercises" class="btn-action">
+                    ✏️ Ir a Ejercicios Prácticos ➔
+                </button>
+                <button id="btnExitMenu" class="btn-action-secondary">
+                    🏠 Salir al Menú Principal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts de Inteligencia Artificial y YouTube -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
+
+    <script>
+        const URL_MODELO = "https://teachablemachine.withgoogle.com/models/xPDHahLlZ/";
+
+        const savedConfig = localStorage.getItem('juegoLetrasConfig');
+        let config = {
+            videoId: 'yxI-Ek7PIDk',
+            checkpoints: [
+                { time: 48, letter: 'A', image: 'img/A.png'}, { time: 72, letter: 'B', image: 'img/B.png' }, { time: 96, letter: 'C', image: 'img/C.png' },
+                { time: 122, letter: 'D', image: 'img/D.png' }, { time: 148, letter: 'E', image: 'img/E.png' }, { time: 174, letter: 'F', image: 'img/F.png' },
+                { time: 198, letter: 'G', image: 'img/G.png' }, { time: 223, letter: 'H', image: 'img/H.png' }, { time: 249, letter: 'I', image: 'img/I.png' },
+                { time: 273, letter: 'J', image: 'img/J.png' }, { time: 297, letter: 'K', image: 'img/K.png' }, { time: 323, letter: 'L', image: 'img/L.png' },
+                { time: 346, letter: 'M', image: 'img/M.png' }, { time: 372, letter: 'N', image: 'img/N.png' }, { time: 397, letter: 'O', image: 'img/O.png' },
+                { time: 422, letter: 'P', image: 'img/P.png' }, { time: 447, letter: 'Q', image: 'img/Q.png' }, { time: 472, letter: 'R', image: 'img/R.png' },
+                { time: 497, letter: 'S', image: 'img/S.png' }, { time: 521, letter: 'T', image: 'img/T.png' }, { time: 546, letter: 'U', image: 'img/U.png' },
+                { time: 571, letter: 'V', image: 'img/V.png' }, { time: 595, letter: 'W', image: 'img/W.png' }, { time: 620, letter: 'X', image: 'img/X.png' },
+                { time: 645, letter: 'Y', image: 'img/Y.png' }, { time: 665, letter: 'Z', image: 'img/Z.png' }
+            ]
+        };
+
+        if (savedConfig) config = JSON.parse(savedConfig);
+
+        const checkpoints = config.checkpoints;
+        const totalLetters = checkpoints.length;
+
+        let scanActive = false;
+        let player, isCameraReady = false;
+        let lastCheckpointNotified = -1, score = 0, currentCheckpoint = 0;
+        let model, webcam, maxPredictions;
+        let isProcessingMatch = false;
+
+        // Elementos DOM
+        const scoreValueElement = document.getElementById('scoreValue');
+        const currentLetterElement = document.getElementById('currentLetter');
+        const progressFillElement = document.getElementById('progressFill');
+        const progressTextElement = document.getElementById('progressText');
+        const feedbackElement = document.getElementById('feedback');
+        const scanStatusElement = document.getElementById('scanStatus');
+        const expectedLetterText = document.getElementById('expectedLetterText');
+        const webcamContainerElement = document.getElementById('webcam-container');
+        const targetCardImageElement = document.getElementById('targetCardImage');
+        const videoColumn = document.getElementById('videoColumn');
+        const interactiveContainer = document.getElementById('interactiveContainer');
+        const instructionBox = document.getElementById('instructionBox');
+        const completionModal = document.getElementById('completionModal');
+
+        // Botones de acción
+        document.getElementById('btnGoToExercises').addEventListener('click', () => window.location.href = 'ejercicios_practicos_letras.html');
+        document.getElementById('btnRepeatReview').addEventListener('click', () => { completionModal.style.display = 'none'; resetGame(); });
+        document.getElementById('btnExitMenu').addEventListener('click', () => window.location.href = 'index_letras_numeros.html');
+        document.getElementById('resetBtn').addEventListener('click', resetGame);
+
+        // API YouTube
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('youtubePlayer', {
+                height: '360',
+                width: '640',
+                videoId: config.videoId,
+                playerVars: { 'playsinline': 1, 'modestbranding': 1, 'rel': 0 },
+                events: { 'onStateChange': onPlayerStateChange }
+            });
+        }
+
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.PLAYING) requestAnimationFrame(checkTime);
+        }
+
+        function checkTime() {
+            if (player && player.getPlayerState() === YT.PlayerState.PLAYING) {
+                if (currentCheckpoint < totalLetters) {
+                    const checkpoint = checkpoints[currentCheckpoint];
+                    const currentTime = player.getCurrentTime();
+
+                    if (currentTime >= checkpoint.time && lastCheckpointNotified !== currentCheckpoint) {
+                        player.pauseVideo();
+
+                        videoColumn.style.display = 'none';
+                        targetCardImageElement.src = checkpoint.image || `https://dummyimage.com/200x200/4f46e5/ffffff.png&text=${checkpoint.letter}`;
+                        interactiveContainer.style.display = 'flex';
+                        instructionBox.style.display = 'inline-block';
+                        expectedLetterText.textContent = checkpoint.letter;
+                        updateCurrentLetter(checkpoint.letter);
+
+                        hideFeedback();
+                        scanStatusElement.textContent = "👀 Esperando a que muestres la seña...";
+                        speak(`Muestra la letra ${checkpoint.letter}`);
+                        lastCheckpointNotified = currentCheckpoint;
+                        scanActive = true;
+                    }
+                }
+                requestAnimationFrame(checkTime);
+            }
+        }
+
+        function handleCorrectMatch() {
+            isProcessingMatch = true;
+            scanActive = false;
+
+            const letter = checkpoints[currentCheckpoint].letter;
+
+            showFeedback(`✅ ¡Excelente! Letra ${letter} correcta (+10 pts)`, 'feedback-correct');
+            updateScore(10);
+            speak(`¡Muy bien! Letra ${letter}`);
+            updateCurrentLetter(letter);
+
+            interactiveContainer.style.display = 'none';
+            instructionBox.style.display = 'none';
+            videoColumn.style.display = 'block';
+
+            scanStatusElement.textContent = "🎯 ¡Bien hecho! Continuando...";
+            currentCheckpoint++;
+            updateProgress();
+
+            setTimeout(() => {
+                isProcessingMatch = false;
+                if (currentCheckpoint < totalLetters) {
+                    if (player) player.playVideo();
+                } else {
+                    speak("¡Felicidades! Has completado todas las letras");
+                    completionModal.style.display = 'flex';
+                }
+            }, 1800);
+        }
+
+        function resetGame() {
+            scanActive = false;
+            isProcessingMatch = false;
+            score = 0;
+            currentCheckpoint = 0;
+            lastCheckpointNotified = -1;
+
+            updateScore(0);
+            updateProgress();
+            updateCurrentLetter('-');
+            hideFeedback();
+
+            interactiveContainer.style.display = 'none';
+            instructionBox.style.display = 'none';
+            completionModal.style.display = 'none';
+            videoColumn.style.display = 'block';
+
+            if (player) {
+                player.seekTo(0);
+                player.playVideo();
+            }
+        }
+
+        async function initAI() {
+            try {
+                scanStatusElement.textContent = "🧠 Cargando modelo de IA y cámara...";
+                model = await tmImage.load(URL_MODELO + "model.json", URL_MODELO + "metadata.json");
+                maxPredictions = model.getTotalClasses();
+
+                webcam = new tmImage.Webcam(400, 300, true);
+                await webcam.setup();
+                await webcam.play();
+
+                webcamContainerElement.innerHTML = '';
+                webcamContainerElement.appendChild(webcam.canvas);
+                isCameraReady = true;
+                scanStatusElement.textContent = "📸 Cámara lista - Reproduce el vídeo para empezar";
+
+                requestAnimationFrame(loop);
+            } catch (err) {
+                console.error(err);
+                scanStatusElement.textContent = "⚠️ Error al iniciar cámara o modelo";
+                showFeedback("⚠️ Error al iniciar cámara o modelo.", "feedback-warning");
+            }
+        }
+
+        async function loop() {
+            if (webcam && isCameraReady) {
+                webcam.update();
+                if (scanActive && !isProcessingMatch) await predict();
+            }
+            requestAnimationFrame(loop);
+        }
+
+        async function predict() {
+            if (!model || !webcam) return;
+
+            const prediction = await model.predict(webcam.canvas);
+            const expectedLetter = checkpoints[currentCheckpoint]?.letter;
+
+            let highestProbability = 0;
+            let bestClass = "";
+
+            for (let i = 0; i < maxPredictions; i++) {
+                if (prediction[i].probability > highestProbability) {
+                    highestProbability = prediction[i].probability;
+                    bestClass = prediction[i].className.trim().toUpperCase();
+                }
+            }
+
+            const isBackground = bestClass.includes("FONDO") || bestClass.includes("BACKGROUND") || bestClass.includes("NINGUNA") || bestClass === "";
+
+            if (isBackground || highestProbability < 0.82) {
+                scanStatusElement.textContent = "👀 Esperando a que muestres la seña...";
+                return;
+            }
+
+            scanStatusElement.textContent = `🧠 Visto: ${bestClass} (${Math.round(highestProbability * 100)}%)`;
+
+            if (bestClass === expectedLetter) {
+                handleCorrectMatch();
+            }
+        }
+
+        function updateCurrentLetter(letter) {
+            currentLetterElement.textContent = letter || '-';
+            currentLetterElement.classList.remove('letter-pulse');
+            void currentLetterElement.offsetWidth;
+            currentLetterElement.classList.add('letter-pulse');
+        }
+
+        function updateScore(points) {
+            score = Math.max(0, score + points);
+            scoreValueElement.textContent = score;
+        }
+
+        function updateProgress() {
+            const progress = (currentCheckpoint / totalLetters) * 100;
+            progressFillElement.style.width = `${Math.min(100, progress)}%`;
+            progressTextElement.textContent = `${currentCheckpoint}/${totalLetters} letras completadas`;
+        }
+
+        function showFeedback(message, type) {
+            feedbackElement.textContent = message;
+            feedbackElement.className = type || '';
+            feedbackElement.style.display = 'inline-block';
+        }
+
+        function hideFeedback() {
+            feedbackElement.textContent = '';
+            feedbackElement.style.display = 'none';
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.85;
+                utterance.pitch = 1.1;
+                utterance.lang = 'es-ES';
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', initAI);
+    </script>
+</body>
+</html>

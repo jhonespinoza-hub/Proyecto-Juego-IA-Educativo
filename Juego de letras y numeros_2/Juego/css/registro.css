@@ -1,0 +1,143 @@
+/**
+ * MEJORAS ESTÉTICAS PARA EL FORMULARIO DE REGISTRO
+ * Compatible con Chrome, Firefox, Edge y Safari
+ */
+
+/* Contenedor principal del formulario */
+#registerContainer {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+  border: 1px solid #e0e0e0 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  transition: all 0.4s ease !important;
+}
+
+#registerContainer:hover {
+  transform: translateY(-5px) !important;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Título del formulario */
+#registerContainer h2 {
+  color: #2E7D32 !important;
+  font-size: 1.8rem !important;
+  margin-bottom: 2rem !important;
+  position: relative !important;
+  padding-bottom: 0.5rem !important;
+  text-align: center !important;
+}
+
+#registerContainer h2::after {
+  content: '' !important;
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: 80px !important;
+  height: 4px !important;
+  background: linear-gradient(90deg, #4CAF50, #8BC34A) !important;
+  border-radius: 2px !important;
+}
+
+/* Grupo de inputs */
+#registerContainer .input-group {
+  margin-bottom: 1.5rem !important;
+  position: relative !important;
+}
+
+/* Etiquetas flotantes (opcional) */
+#registerContainer .input-group label {
+  position: absolute !important;
+  top: -10px !important;
+  left: 15px !important;
+  background: white !important;
+  padding: 0 5px !important;
+  font-size: 0.9rem !important;
+  color: #4CAF50 !important;
+  font-weight: 500 !important;
+}
+
+/* Inputs mejorados */
+#registerContainer input[type="text"],
+#registerContainer input[type="email"],
+#registerContainer input[type="password"],
+#registerContainer input[type="text"]#codigoKit {
+  width: 100% !important;
+  padding: 1.2rem 1.5rem !important;
+  font-size: 1rem !important;
+  color: #333 !important;
+  background-color: #fff !important;
+  border: 2px solid #e0e0e0 !important;
+  border-radius: 10px !important;
+  transition: all 0.3s ease !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Efecto hover para inputs */
+#registerContainer input:hover {
+  border-color: #a5d6a7 !important;
+}
+
+/* Efecto focus mejorado */
+#registerContainer input:focus {
+  border-color: #4CAF50 !important;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2), 
+              inset 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  outline: none !important;
+}
+
+/* Botón de registro mejorado */
+#registerContainer button {
+  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%) !important;
+  color: white !important;
+  border: none !important;
+  padding: 1.2rem !important;
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+  border-radius: 10px !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  margin-top: 1rem !important;
+}
+
+#registerContainer button:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4) !important;
+}
+
+#registerContainer button:active {
+  transform: translateY(0) !important;
+}
+
+/* Mensaje de registro */
+#mensajeRegistro {
+  margin-top: 1.5rem !important;
+  padding: 1rem !important;
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+  text-align: center !important;
+  transition: all 0.3s ease !important;
+}
+
+/* Enlace de login */
+#registerContainer .form-footer {
+  margin-top: 1.5rem !important;
+  text-align: center !important;
+  color: #666 !important;
+}
+
+#registerContainer .form-footer a {
+  color: #2E7D32 !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+  transition: all 0.2s ease !important;
+}
+
+#registerContainer .form-footer a:hover {
+  color: #1B5E20 !important;
+  text-decoration: underline !important;
+}

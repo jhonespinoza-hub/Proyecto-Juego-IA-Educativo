@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego Tangram - Visión Artificial</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --secondary: #6366f1;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #16a34a;
+            --error: #dc2626;
+            --warning: #d97706;
+            --border-radius: 16px;
+            --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            --gradient-start: #4f46e5;
+            --gradient-end: #6366f1;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 980px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: white;
+            padding: 25px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .header-icon {
+            font-size: 2.2rem;
+        }
+
+        .header-nav-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .info-badge {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 8px 18px;
+            border-radius: 25px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-reset, .btn-home-header {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            color: white;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .btn-reset:hover, .btn-home-header:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        main {
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        #feedback {
+            width: 100%;
+            font-size: 1.2rem;
+            font-weight: 600;
+            min-height: 52px;
+            text-align: center;
+            padding: 12px 20px;
+            border-radius: 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .game-zone {
+            display: flex;
+            gap: 25px;
+            width: 100%;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            width: 320px;
+        }
+
+        .target-card {
+            width: 100%;
+            height: 360px;
+            border-radius: var(--border-radius);
+            border: 2px solid var(--border);
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--box-shadow);
+            position: relative;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        .camera-card {
+            width: 480px;
+            height: 360px;
+            border-radius: var(--border-radius);
+            background: #000;
+            border: 3px solid var(--secondary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--box-shadow);
+            position: relative;
+            overflow: hidden;
+            padding: 0;
+        }
+
+        .target-card img {
+            max-width: 90%;
+            max-height: 220px;
+            object-fit: contain;
+            margin-top: 15px;
+        }
+
+        .card-label {
+            position: absolute;
+            top: 12px;
+            left: 15px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            z-index: 10;
+        }
+
+        .camera-card .card-label {
+            color: rgba(255, 255, 255, 0.9);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+
+        #webcam-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Cambiado de 'cover' a 'contain' para mostrar la escena completa sin recortes */
+        #webcam-container canvas, #webcam-container video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: contain !important;
+            display: block;
+        }
+
+        .scanning-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            box-sizing: border-box;
+            pointer-events: none;
+            animation: scanning 1.5s infinite ease-in-out;
+            border-radius: calc(var(--border-radius) - 3px);
+        }
+
+        .scanning-corner {
+            position: absolute; width: 30px; height: 30px;
+            border-color: var(--primary);
+            border-style: solid; border-width: 0; border-radius: 4px;
+        }
+
+        .scanning-corner.tl { top: 15px; left: 15px; border-top-width: 4px; border-left-width: 4px; }
+        .scanning-corner.tr { top: 15px; right: 15px; border-top-width: 4px; border-right-width: 4px; }
+        .scanning-corner.bl { bottom: 15px; left: 15px; border-bottom-width: 4px; border-left-width: 4px; }
+        .scanning-corner.br { bottom: 15px; right: 15px; border-bottom-width: 4px; border-right-width: 4px; }
+
+        @keyframes scanning {
+            0%, 100% { border-color: rgba(255, 255, 255, 0.3); box-shadow: 0 0 20px rgba(79, 70, 229, 0); }
+            50% { border-color: var(--primary); box-shadow: 0 0 30px rgba(79, 70, 229, 0.3); }
+        }
+
+        .btn-check {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: white;
+            border: none;
+            padding: 14px 25px;
+            width: 100%;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-check:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-check:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .progress-container {
+            width: 100%;
+            margin-top: 15px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            height: 18px;
+            background-color: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, var(--gradient-start), var(--gradient-end));
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.6s ease;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-card {
+            background: white;
+            padding: 35px;
+            border-radius: var(--border-radius);
+            text-align: center;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 1px solid var(--border);
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+
+        .btn-action:hover {
+            transform: scale(1.02);
+        }
+
+        .btn-action-secondary {
+            background: #64748b;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+
+        .btn-action-secondary:hover {
+            transform: scale(1.02);
+        }
+
+        footer {
+            text-align: center;
+            padding: 18px;
+            background: var(--bg);
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 820px) {
+            header { flex-direction: column; text-align: center; padding: 20px; }
+            .header-info { width: 100%; justify-content: center; }
+            .game-zone { flex-direction: column; align-items: center; }
+            .left-column, .target-card, .camera-card { width: 100%; max-width: 480px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <span class="header-icon">🧩</span>
+                <h1>Reto Tangram</h1>
+            </div>
+
+            <div class="header-nav-buttons">
+                <a href="index_letras_numeros.html" class="btn-home-header">🏠 Menú Principal</a>
+            </div>
+
+            <div class="header-info">
+                <div class="info-badge">
+                    <span>🎯</span>
+                    <span id="roundText">Figura 1 / 4</span>
+                </div>
+                <button id="resetBtn" class="btn-reset" title="Reiniciar juego">↺</button>
+            </div>
+        </header>
+
+        <main>
+            <div id="feedback">Cargando inteligencia artificial y cámara...</div>
+
+            <div class="game-zone">
+                <div class="left-column">
+                    <div class="target-card">
+                        <span class="card-label">Arma esta figura:</span>
+                        <img id="targetImage" src="" alt="Figura Tangram" onerror="this.src='https://dummyimage.com/200x200/4f46e5/ffffff.png&text=Tangram'">
+                        <h3 id="targetName" style="margin-top: 15px; text-transform: uppercase; color: var(--primary); font-size: 1.3rem;">-</h3>
+                    </div>
+                    <button id="btnCheck" class="btn-check" disabled>🔍 Comprobar Figura</button>
+                </div>
+
+                <div class="camera-card">
+                    <span class="card-label">Tu cámara:</span>
+                    <div id="webcam-container"></div>
+                    <div class="scanning-overlay">
+                        <div class="scanning-corner tl"></div>
+                        <div class="scanning-corner tr"></div>
+                        <div class="scanning-corner bl"></div>
+                        <div class="scanning-corner br"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-header">
+                    <span>📊 Progreso del Reto</span>
+                    <span id="progressText">0/4 Figuras completadas</span>
+                </div>
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Actividad de razonamiento espacial con Inteligencia Artificial 🎓</p>
+        </footer>
+    </div>
+
+    <!-- Modal Final -->
+    <div id="completionModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+            <div style="font-size: 3.5rem; margin-bottom: 10px;">🏆🎉</div>
+            <h2 style="color: var(--text); font-size: 1.8rem; margin-bottom: 10px;">¡Reto Tangram Completado!</h2>
+            <p style="color: var(--text-muted); font-size: 1rem; margin-bottom: 20px;">
+                Has logrado armar correctamente todas las figuras asignadas.
+            </p>
+            <div style="display: flex; gap: 10px; flex-direction: column;">
+                <button id="btnRepeatGame" class="btn-action">
+                    ↺ Jugar de Nuevo
+                </button>
+                <button id="btnExitMenu" class="btn-action-secondary">
+                    🏠 Salir al Menú Principal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+    <script>
+        const URL_MODELO = 'https://teachablemachine.withgoogle.com/models/GH_WLlgCy/';
+
+        const ALL_FIGURES = [
+            { id: 'bear', name: 'Oso', image: 'img/bear.png' },
+            { id: 'boat', name: 'Barco', image: 'img/boat.png' },
+            { id: 'camel', name: 'Camello', image: 'img/camel.png' },
+            { id: 'cat', name: 'Gato', image: 'img/cat.jpg' },
+            { id: 'charley', name: 'Charley', image: 'img/charley.png' },
+            { id: 'dog', name: 'Perro', image: 'img/dog.png' },
+            { id: 'egret', name: 'Garza', image: 'img/egret.jpg' },
+            { id: 'fish', name: 'Pez', image: 'img/fish.jpg' }
+        ];
+
+        const TOTAL_ROUNDS = 4;
+        let selectedFigures = [];
+        let currentRound = 0;
+        let model, webcam, maxPredictions;
+        let isCameraReady = false;
+
+        const targetImage = document.getElementById('targetImage');
+        const targetName = document.getElementById('targetName');
+        const feedback = document.getElementById('feedback');
+        const roundText = document.getElementById('roundText');
+        const btnCheck = document.getElementById('btnCheck');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const completionModal = document.getElementById('completionModal');
+
+        btnCheck.addEventListener('click', startCountdown);
+        document.getElementById('resetBtn').addEventListener('click', startNewGame);
+        document.getElementById('btnRepeatGame').addEventListener('click', () => {
+            completionModal.style.display = 'none';
+            startNewGame();
+        });
+        document.getElementById('btnExitMenu').addEventListener('click', () => {
+            window.location.href = 'index_letras_numeros.html';
+        });
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.9;
+                utterance.lang = 'es-ES';
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function selectRandomFigures() {
+            return [...ALL_FIGURES].sort(() => 0.5 - Math.random()).slice(0, TOTAL_ROUNDS);
+        }
+
+        async function initAI() {
+            try {
+                const modelURL = URL_MODELO + 'model.json';
+                const metadataURL = URL_MODELO + 'metadata.json';
+
+                model = await tmImage.load(modelURL, metadataURL);
+                maxPredictions = model.getTotalClasses();
+
+                // PEDIR RESOLUCIÓN HD NATIVA (1280x960) A LA WEBCAM PARA ABRIR EL CAMPO DE VISIÓN REAL
+                const flip = true;
+                webcam = new tmImage.Webcam(1280,1280, flip);
+                await webcam.setup();
+                await webcam.play();
+
+                document.getElementById('webcam-container').appendChild(webcam.canvas);
+                isCameraReady = true;
+
+                btnCheck.disabled = false;
+                startNewGame();
+                requestAnimationFrame(loop);
+            } catch (e) {
+                feedback.textContent = "⚠️ Error al cargar el modelo o la cámara";
+                feedback.style.color = "var(--error)";
+                feedback.style.background = "#fef2f2";
+                console.error(e);
+            }
+        }
+
+        async function loop() {
+            if (webcam && isCameraReady) {
+                webcam.update();
+            }
+            requestAnimationFrame(loop);
+        }
+
+        function startNewGame() {
+            selectedFigures = selectRandomFigures();
+            completionModal.style.display = 'none';
+            loadRound(0);
+        }
+
+        function updateProgress() {
+            const progress = (currentRound / TOTAL_ROUNDS) * 100;
+            progressFill.style.width = `${progress}%`;
+            progressText.textContent = `${currentRound}/${TOTAL_ROUNDS} Figuras completadas`;
+        }
+
+        function loadRound(index) {
+            currentRound = index;
+            const fig = selectedFigures[currentRound];
+
+            targetImage.src = fig.image;
+            targetName.textContent = fig.name;
+            roundText.textContent = `Figura ${currentRound + 1} / ${TOTAL_ROUNDS}`;
+
+            feedback.textContent = `Arma la figura de ${fig.name} y presiona Comprobar.`;
+            feedback.style.color = "var(--primary)";
+            feedback.style.background = "var(--bg)";
+
+            updateProgress();
+            speak(`Arma la figura ${fig.name}`);
+        }
+
+        function startCountdown() {
+            if (!model || !webcam || !isCameraReady) return;
+
+            btnCheck.disabled = true;
+            let count = 3;
+
+            feedback.style.color = "var(--warning)";
+            feedback.style.background = "#fef3c7";
+            feedback.textContent = `⏳ Retira tu mano... Capturando en ${count}...`;
+            speak(`3`);
+
+            const timer = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    feedback.textContent = `⏳ Retira tu mano... Capturando en ${count}...`;
+                    speak(`${count}`);
+                } else {
+                    clearInterval(timer);
+                    verifyFigure();
+                }
+            }, 1000);
+        }
+
+        async function verifyFigure() {
+            feedback.textContent = "🧠 Analizando tu Tangram...";
+            feedback.style.color = "var(--text)";
+            feedback.style.background = "var(--bg)";
+
+            const prediction = await model.predict(webcam.canvas);
+
+            let highestProb = 0;
+            let detectedClass = "";
+
+            for (let i = 0; i < maxPredictions; i++) {
+                if (prediction[i].probability > highestProb) {
+                    highestProb = prediction[i].probability;
+                    detectedClass = prediction[i].className.trim().toLowerCase();
+                }
+            }
+
+            const currentTargetId = selectedFigures[currentRound].id.toLowerCase();
+
+            if (highestProb >= 0.75 && detectedClass === currentTargetId) {
+                feedback.textContent = "🎉 ¡Excelente! La figura está correctamente armada.";
+                feedback.style.color = "var(--success)";
+                feedback.style.background = "#dcfce7";
+                speak("¡Excelente! Has armado la figura correctamente.");
+
+                setTimeout(() => {
+                    if (currentRound + 1 < TOTAL_ROUNDS) {
+                        loadRound(currentRound + 1);
+                        btnCheck.disabled = false;
+                    } else {
+                        currentRound = TOTAL_ROUNDS;
+                        updateProgress();
+                        feedback.textContent = "🏆 ¡Felicidades! Completaste todas las figuras.";
+                        speak("¡Felicidades! Completaste todas las figuras de Tangram.");
+                        completionModal.style.display = 'flex';
+                    }
+                }, 2500);
+            } else {
+                feedback.textContent = `❌ Mmm, aún no coincide. Asegúrate de acomodar bien las piezas de ${selectedFigures[currentRound].name}.`;
+                feedback.style.color = "var(--error)";
+                feedback.style.background = "#fef2f2";
+                speak("Aún no coincide. Ajusta las piezas e inténtalo de nuevo.");
+
+                setTimeout(() => {
+                    btnCheck.disabled = false;
+                }, 2000);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', initAI);
+    </script>
+</body>
+</html>

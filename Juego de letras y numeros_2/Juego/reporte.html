@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte de Resultados - Panel del Docente</title>
+    
+    <!-- Librerías para PDF con texto real y tablas profesionales -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --secondary-color: #4338ca;
+            --card-background: #ffffff;
+            --bg-color: #f1f5f9;
+            --text-color: #0f172a;
+            --text-light: #64748b;
+            --border-radius: 12px;
+            --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); padding: 24px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 24px;
+            border-radius: var(--border-radius);
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--box-shadow);
+        }
+
+        header h1 { font-size: 1.6rem; }
+
+        .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        .btn-header {
+            background: white;
+            color: var(--primary-color);
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-header:hover { background: #f8fafc; transform: translateY(-1px); }
+        .btn-pdf { background-color: #10b981; color: white; }
+        .btn-pdf:hover { background-color: #059669; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--card-background);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+
+        .stat-card h3 { font-size: 0.85rem; color: var(--text-light); text-transform: uppercase; margin-bottom: 8px; }
+        .stat-card .value { font-size: 2rem; font-weight: bold; color: var(--primary-color); }
+
+        .filters-card {
+            background: var(--card-background);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 24px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .filter-group { display: flex; flex-direction: column; }
+        .filter-group label { font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: var(--text-color); }
+        
+        .filter-group select {
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            outline: none;
+            background-color: #fff;
+        }
+
+        .filter-group select:focus { border-color: var(--primary-color); }
+
+        .table-container {
+            background: var(--card-background);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 20px;
+            overflow-x: auto;
+            border: 1px solid #e2e8f0;
+        }
+
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 14px 16px; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; }
+        th { background-color: #f8fafc; color: var(--text-color); font-weight: 700; }
+        tr:hover { background-color: #f8fafc; }
+
+        .errores-cell {
+            max-width: 250px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .badge-error {
+            background-color: #fee2e2;
+            color: #dc2626;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .badge-clean {
+            background-color: #d1fae5;
+            color: #059669;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="areaReporte">
+        <header>
+            <div>
+                <h1>📊 Dashboard de Resultados</h1>
+                <p id="docenteBienvenida" style="font-size: 0.9rem; opacity: 0.9; margin-top: 4px;">Cargando información del docente...</p>
+            </div>
+            <div class="header-actions">
+                <a href="docente_panel.html" class="btn-header">⬅️ Volver al Panel</a>
+                <button class="btn-header" onclick="cargarReportes()">🔄 Actualizar</button>
+                <button class="btn-header btn-pdf" onclick="descargarPDF()">📄 Exportar PDF</button>
+            </div>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Partidas</h3>
+                <div class="value" id="statPartidas">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Puntaje Promedio</h3>
+                <div class="value" id="statPromedio">0 pts</div>
+            </div>
+            <div class="stat-card">
+                <h3>Errores Registrados</h3>
+                <div class="value" id="statErrores" style="color: #dc2626;">0</div>
+            </div>
+        </div>
+
+        <div class="filters-card">
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label for="filterAula">🏫 Aula / Curso:</label>
+                    <select id="filterAula" onchange="aplicarFiltros()">
+                        <option value="">Todas mis aulas</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filterEstudiante">🎓 Estudiante:</label>
+                    <select id="filterEstudiante" onchange="aplicarFiltros()">
+                        <option value="">Todos los estudiantes</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filterMateria">📚 Materia / Juego:</label>
+                    <select id="filterMateria" onchange="aplicarFiltros()">
+                        <option value="">Todas las materias</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Curso / Aula</th>
+                        <th>Alumno</th>
+                        <th>Materia / Juego</th>
+                        <th>Puntaje</th>
+                        <th>Tiempo</th>
+                        <th>Detalle de Errores</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaCuerpo">
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: var(--text-light);">Cargando registros...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const URL_API_MYSQL = 'http://localhost:3000/api';
+        let todasLasPartidas = [];
+        let docenteSesion = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const sesionData = localStorage.getItem('docenteSesion');
+            if (!sesionData) {
+                window.location.href = "login.html";
+                return;
+            }
+
+            docenteSesion = JSON.parse(sesionData);
+            
+            // Protección contra acceso no autorizado de Administradores
+            if (docenteSesion.rol === 'admin') {
+                window.location.href = "admin_panel.html";
+                return;
+            }
+
+            const txtBienvenida = document.getElementById('docenteBienvenida');
+            if (txtBienvenida && docenteSesion.nombre) {
+                txtBienvenida.textContent = `Reportes de las clases de: ${docenteSesion.nombre}`;
+            }
+
+            cargarReportes();
+        });
+
+        async function cargarReportes() {
+            const tablaCuerpo = document.getElementById('tablaCuerpo');
+            
+            try {
+                const res = await fetch(`${URL_API_MYSQL}/reportes?id_docente=${docenteSesion.id_docente}`);
+                const datos = await res.json();
+
+                if (!datos || datos.length === 0) {
+                    tablaCuerpo.innerHTML = `<tr><td colspan="7" style="text-align: center;">No hay registros disponibles aún.</td></tr>`;
+                    limpiarEstadisticas();
+                    return;
+                }
+
+                const partidasMap = new Map();
+
+                datos.forEach(row => {
+                    const esMiDocente = (row.id_docente && row.id_docente == docenteSesion.id_docente) || 
+                                        (row.docente && row.docente.toLowerCase() === docenteSesion.nombre.toLowerCase());
+
+                    if (esMiDocente) {
+                        if (!partidasMap.has(row.id_partida)) {
+                            partidasMap.set(row.id_partida, {
+                                id_partida: row.id_partida,
+                                fecha: row.fecha_partida ? new Date(row.fecha_partida).toLocaleString('es-ES') : 'Sin fecha',
+                                curso: row.curso || 'Sin curso',
+                                alumno: row.alumno || 'Desconocido',
+                                materia: row.nombre_juego ? `${row.materia} (${row.nombre_juego})` : (row.materia || 'General'),
+                                puntuacion: row.puntuacion_total || 0,
+                                tiempo: row.tiempo_segundos || 0,
+                                errores: []
+                            });
+                        }
+
+                        if (row.operacion_planteada) {
+                            partidasMap.get(row.id_partida).errores.push({
+                                op: row.operacion_planteada,
+                                esp: row.respuesta_esperada,
+                                det: row.respuesta_detectada
+                            });
+                        }
+                    }
+                });
+
+                todasLasPartidas = Array.from(partidasMap.values());
+
+                if (todasLasPartidas.length === 0) {
+                    tablaCuerpo.innerHTML = `<tr><td colspan="7" style="text-align: center;">No se encontraron registros bajo tu cuenta.</td></tr>`;
+                    limpiarEstadisticas();
+                    return;
+                }
+
+                poblarSelectsFiltros(todasLasPartidas);
+                aplicarFiltros();
+
+            } catch (e) {
+                console.error("Error al cargar reportes:", e);
+                tablaCuerpo.innerHTML = `<tr><td colspan="7" style="text-align: center; color: red;">Error al conectar con la base de datos MySQL.</td></tr>`;
+            }
+        }
+
+        function poblarSelectsFiltros(partidas) {
+            const selectAula = document.getElementById('filterAula');
+            const selectEstudiante = document.getElementById('filterEstudiante');
+            const selectMateria = document.getElementById('filterMateria');
+
+            const aulas = [...new Set(partidas.map(p => p.curso))].sort();
+            const estudiantes = [...new Set(partidas.map(p => p.alumno))].sort();
+            const materias = [...new Set(partidas.map(p => p.materia))].sort();
+
+            selectAula.innerHTML = '<option value="">Todas mis aulas</option>';
+            aulas.forEach(a => selectAula.appendChild(new Option(a, a)));
+
+            selectEstudiante.innerHTML = '<option value="">Todos los estudiantes</option>';
+            estudiantes.forEach(e => selectEstudiante.appendChild(new Option(e, e)));
+
+            selectMateria.innerHTML = '<option value="">Todas las materias</option>';
+            materias.forEach(m => selectMateria.appendChild(new Option(m, m)));
+        }
+
+        function aplicarFiltros() {
+            const aulaSel = document.getElementById('filterAula').value;
+            const estudianteSel = document.getElementById('filterEstudiante').value;
+            const materiaSel = document.getElementById('filterMateria').value;
+
+            const partidasFiltradas = todasLasPartidas.filter(p => {
+                const coincideAula = !aulaSel || p.curso === aulaSel;
+                const coincideEstudiante = !estudianteSel || p.alumno === estudianteSel;
+                const coincideMateria = !materiaSel || p.materia === materiaSel;
+                return coincideAula && coincideEstudiante && coincideMateria;
+            });
+
+            const totalPartidas = partidasFiltradas.length;
+            const sumaPuntos = partidasFiltradas.reduce((acc, p) => acc + p.puntuacion, 0);
+            const totalErrores = partidasFiltradas.reduce((acc, p) => acc + p.errores.length, 0);
+
+            document.getElementById('statPartidas').textContent = totalPartidas;
+            document.getElementById('statPromedio').textContent = totalPartidas ? `${Math.round(sumaPuntos / totalPartidas)} pts` : '0 pts';
+            document.getElementById('statErrores').textContent = totalErrores;
+
+            const tablaCuerpo = document.getElementById('tablaCuerpo');
+            tablaCuerpo.innerHTML = '';
+
+            if (partidasFiltradas.length === 0) {
+                tablaCuerpo.innerHTML = `<tr><td colspan="7" style="text-align: center;">No coinciden registros con los filtros seleccionados.</td></tr>`;
+                return;
+            }
+
+            partidasFiltradas.forEach(p => {
+                let erroresHTML = '';
+                if (p.errores.length === 0) {
+                    erroresHTML = `<span class="badge-clean">Sin errores</span>`;
+                } else {
+                    erroresHTML = `<div class="errores-cell">` + p.errores.map(e => 
+                        `<span class="badge-error" title="Esperado: ${e.esp}">${e.op} ➔ Dijo: ${e.det}</span>`
+                    ).join('') + `</div>`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${p.fecha}</td>
+                    <td><strong>${p.curso}</strong></td>
+                    <td>${p.alumno}</td>
+                    <td>${p.materia}</td>
+                    <td><strong>${p.puntuacion} pts</strong></td>
+                    <td>${p.tiempo} seg</td>
+                    <td>${erroresHTML}</td>
+                `;
+                tablaCuerpo.appendChild(tr);
+            });
+        }
+
+        function limpiarEstadisticas() {
+            document.getElementById('statPartidas').textContent = '0';
+            document.getElementById('statPromedio').textContent = '0 pts';
+            document.getElementById('statErrores').textContent = '0';
+        }
+
+        // GENERACIÓN DE PDF PROFESIONAL CON jsPDF + AutoTable
+        function descargarPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+            const aulaSel = document.getElementById('filterAula').value || 'Todas';
+            const estudianteSel = document.getElementById('filterEstudiante').value || 'Todos';
+            const materiaSel = document.getElementById('filterMateria').value || 'Todas';
+
+            const partidasFiltradas = todasLasPartidas.filter(p => {
+                const coincideAula = !aulaSel || aulaSel === 'Todas' || p.curso === aulaSel;
+                const coincideEstudiante = !estudianteSel || estudianteSel === 'Todos' || p.alumno === estudianteSel;
+                const coincideMateria = !materiaSel || materiaSel === 'Todas' || p.materia === materiaSel;
+                return coincideAula && coincideEstudiante && coincideMateria;
+            });
+
+            // Header azul institucional
+            doc.setFillColor(79, 70, 229);
+            doc.rect(0, 0, 297, 24, 'F');
+
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text('REPORTE DE RESULTADOS Y RENDIMIENTO', 14, 15);
+
+            // Información del docente y filtros aplicados
+            doc.setTextColor(15, 23, 42);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Docente: ${docenteSesion ? docenteSesion.nombre : 'N/A'}`, 14, 32);
+            doc.text(`Fecha de emisión: ${new Date().toLocaleDateString('es-ES')}`, 215, 32);
+            doc.text(`Filtros: Aula [${aulaSel}] | Estudiante [${estudianteSel}] | Materia [${materiaSel}]`, 14, 38);
+
+            // Resumen de Métricas
+            const totalPartidas = partidasFiltradas.length;
+            const sumaPuntos = partidasFiltradas.reduce((acc, p) => acc + p.puntuacion, 0);
+            const promPuntos = totalPartidas ? Math.round(sumaPuntos / totalPartidas) : 0;
+            const totalErrores = partidasFiltradas.reduce((acc, p) => acc + p.errores.length, 0);
+
+            doc.setDrawColor(226, 232, 240);
+            doc.setFillColor(248, 250, 252);
+            doc.roundedRect(14, 43, 269, 14, 2, 2, 'FD');
+
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Total Partidas: ${totalPartidas}`, 24, 52);
+            doc.text(`Puntaje Promedio: ${promPuntos} pts`, 115, 52);
+            doc.text(`Total Errores: ${totalErrores}`, 210, 52);
+
+            // Construir la tabla con texto real
+            const filas = partidasFiltradas.map(p => {
+                const detalleErrores = p.errores.length === 0 
+                    ? 'Sin errores' 
+                    : p.errores.map(e => `${e.op} (Dijo: ${e.det})`).join(', ');
+
+                return [
+                    p.fecha,
+                    p.curso,
+                    p.alumno,
+                    p.materia,
+                    `${p.puntuacion} pts`,
+                    `${p.tiempo} seg`,
+                    detalleErrores
+                ];
+            });
+
+            doc.autoTable({
+                startY: 62,
+                head: [['Fecha', 'Curso / Aula', 'Alumno', 'Materia / Juego', 'Puntaje', 'Tiempo', 'Detalle de Errores']],
+                body: filas,
+                theme: 'striped',
+                headStyles: {
+                    fillColor: [79, 70, 229],
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold',
+                    fontSize: 9
+                },
+                bodyStyles: {
+                    fontSize: 8.5,
+                    textColor: [15, 23, 42]
+                },
+                columnStyles: {
+                    0: { cellWidth: 35 },
+                    1: { cellWidth: 30 },
+                    2: { cellWidth: 40 },
+                    3: { cellWidth: 45 },
+                    4: { cellWidth: 25 },
+                    5: { cellWidth: 22 },
+                    6: { cellWidth: 'auto' }
+                },
+                margin: { left: 14, right: 14 }
+            });
+
+            doc.save(`Reporte_Partidas_${aulaSel}_${materiaSel}.pdf`);
+        }
+    </script>
+</body>
+</html>

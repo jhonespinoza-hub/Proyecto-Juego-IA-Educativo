@@ -1,0 +1,488 @@
+/* Reset específico para Chrome */
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+  input, button, select, textarea {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: none !important;
+  }
+  
+  .form-input, #nombreJugador, #codigoQR {
+    padding: 1rem 1.25rem !important;
+    border: 2px solid #E0E0E0 !important;
+    border-radius: var(--border-radius) !important;
+  }
+  
+  .btn {
+    padding: 1rem 2rem !important;
+    border-radius: var(--border-radius) !important;
+  }
+}
+
+/* ================ VARIABLES Y ESTILOS BASE ================ */
+:root {
+  --primary-color: #4CAF50;
+  --primary-dark: #388E3C;
+  --primary-light: #C8E6C9;
+  --secondary-color: #FFC107;
+  --secondary-dark: #FFA000;
+  --accent-color: #FF5722;
+  --dark-color: #2E7D32;
+  --light-color: #E8F5E9;
+  --text-color: #2E2E2E;
+  --text-light: #FFFFFF;
+  --error-color: #D32F2F;
+  --success-color: #388E3C;
+  --border-radius: 12px;
+  --box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --box-shadow-hover: 0 12px 28px rgba(0, 0, 0, 0.16);
+  --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  --gradient-bg: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+}
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: inherit;
+}
+
+html {
+  font-size: 16px;
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 
+               Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background: var(--gradient-bg);
+  color: var(--text-color);
+  line-height: 1.6;
+  min-height: 100vh;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ================ TIPOGRAFÍA ================ */
+h1, h2, h3, h4 {
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 1.5rem;
+  color: var(--dark-color);
+}
+
+h1 {
+  font-size: 2.8rem;
+  text-align: center;
+  position: relative;
+  padding-bottom: 1rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  letter-spacing: -0.5px;
+}
+
+h1::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 5px;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  border-radius: 3px;
+}
+
+h2 {
+  font-size: 2rem;
+  color: var(--dark-color);
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+p {
+  margin-bottom: 1.5rem;
+  font-size: 1.1rem;
+}
+
+/* ================ CONTENEDORES ================ */
+.container {
+  width: 100%;
+  max-width: 450px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.box {
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto 2rem;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.box:hover {
+  box-shadow: var(--box-shadow-hover);
+  transform: translateY(-5px);
+}
+
+.box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 8px;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color), var(--accent-color));
+}
+
+/* ================ FORMULARIOS Y ENTRADAS ================ */
+.input-group {
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--dark-color);
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  font-size: 1rem;
+  border: 2px solid #E0E0E0;
+  border-radius: var(--border-radius);
+  transition: var(--transition);
+  background-color: #FAFAFA;
+}
+
+input:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+  background-color: white;
+}
+
+/* ================ BOTONES ================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: white;
+  background-color: var(--primary-color);
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.btn:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background-color: var(--secondary-color);
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+}
+
+.btn-secondary:hover {
+  background-color: var(--secondary-dark);
+  box-shadow: 0 6px 16px rgba(255, 193, 7, 0.4);
+}
+
+.btn-accent {
+  background-color: var(--accent-color);
+  box-shadow: 0 4px 12px rgba(255, 87, 34, 0.3);
+}
+
+.btn-accent:hover {
+  background-color: #E64A19;
+  box-shadow: 0 6px 16px rgba(255, 87, 34, 0.4);
+}
+
+/* ================ JUEGO - INTERFAZ ================ */
+#animalDisplay {
+  background-color: var(--light-color);
+  border-radius: var(--border-radius);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  border: 3px solid var(--primary-color);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+#animalImage {
+  max-width: 100%;
+  height: auto;
+  max-height: 300px;
+  border-radius: 10px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  border: 5px solid white;
+  margin-bottom: 1.5rem;
+  transition: transform 0.3s ease;
+  object-fit: contain;
+}
+
+#animalImage:hover {
+  transform: scale(1.03);
+}
+
+#animalName {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--dark-color);
+  margin-bottom: 1rem;
+}
+
+#animalFact {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: #555;
+  background-color: rgba(255, 255, 255, 0.85);
+  padding: 1.25rem;
+  border-radius: 8px;
+  border-left: 5px solid var(--secondary-color);
+}
+
+/* ================ PUNTUACIÓN Y FEEDBACK ================ */
+#scoreContainer {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--dark-color);
+  background-color: white;
+  padding: 1rem 2rem;
+  border-radius: 50px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+#score {
+  color: var(--accent-color);
+  font-size: 1.75rem;
+  min-width: 2.5rem;
+  text-align: center;
+}
+
+#feedback {
+  font-size: 1.25rem;
+  padding: 1.25rem;
+  border-radius: var(--border-radius);
+  margin-bottom: 1.5rem;
+  background-color: white;
+  border-left: 5px solid var(--primary-color);
+  text-align: center;
+}
+
+/* ================ MENSAJES Y ESTADOS ================ */
+.message {
+  padding: 1rem;
+  border-radius: var(--border-radius);
+  margin: 1rem 0;
+  font-weight: 500;
+  text-align: center;
+}
+
+.error-message {
+  background-color: #FFEBEE;
+  color: var(--error-color);
+  border-left: 5px solid var(--error-color);
+}
+
+.success-message {
+  background-color: #E8F5E9;
+  color: var(--success-color);
+  border-left: 5px solid var(--success-color);
+}
+
+/* ================ ANIMACIONES ================ */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+
+.animate {
+  animation: fadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.pulse {
+  animation: pulse 0.5s ease;
+}
+
+.shake {
+  animation: shake 0.5s ease;
+}
+
+/* ================ RESPONSIVIDAD ================ */
+@media (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+
+  body {
+    padding: 1.5rem;
+  }
+
+  h1 {
+    font-size: 2.2rem;
+  }
+
+  h2 {
+    font-size: 1.75rem;
+  }
+
+  .box {
+    padding: 1.75rem;
+  }
+
+  #animalImage {
+    max-height: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 1.8rem;
+  }
+
+  .box {
+    padding: 1.5rem;
+  }
+
+  #animalName {
+    font-size: 1.5rem;
+  }
+
+  #animalFact {
+    font-size: 1rem;
+  }
+}
+
+/* ================ ESTADOS ESPECIALES ================ */
+.correct-answer {
+  background-color: #E8F5E9;
+  border-left: 5px solid var(--success-color);
+  animation: pulse 0.5s;
+}
+
+.wrong-answer {
+  background-color: #FFEBEE;
+  border-left: 5px solid var(--error-color);
+  animation: shake 0.5s;
+}
+
+.highlight {
+  position: relative;
+}
+
+.highlight::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 0;
+  width: 100%;
+  height: 8px;
+  background-color: rgba(255, 215, 0, 0.4);
+  z-index: -1;
+  transform: rotate(-1deg);
+}
+/* ================ FORMULARIOS ================ */
+#formsContainer {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.box {
+  display: none;
+}
+
+.box.active {
+  display: block;
+  animation: fadeIn 0.5s ease forwards;
+}
+
+.form-input {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  font-size: 1rem;
+  border: 2px solid #E0E0E0;
+  border-radius: var(--border-radius);
+  transition: var(--transition);
+  background-color: #FAFAFA;
+  margin-bottom: 1rem;
+}
+
+.form-input:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+  background-color: white;
+}
+
+.text-center {
+  text-align: center;
+  margin-top: 1.5rem;
+}
+
+.text-center a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.text-center a:hover {
+  color: var(--primary-dark);
+  text-decoration: underline;
+}
+
+/* Mostrar registro por defecto */
+#registerContainer {
+  display: block;
+}

@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aprendamos los Números</title>
+    <style>
+        :root {
+            --primary: #4338ca;
+            --primary-hover: #3730a3;
+            --secondary: #6366f1;
+            --accent: #f59e0b;
+            --accent-hover: #d97706;
+            --bg: #f0f4f8;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --text-muted: #475569;
+            --border: #cbd5e1;
+            --success: #16a34a;
+            --error: #dc2626;
+            --warning: #d97706;
+            --border-radius: 18px;
+            --box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+            --gradient-start: #4f46e5;
+            --gradient-end: #3b82f6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: white;
+            padding: 25px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .header-icon {
+            font-size: 2.2rem;
+        }
+
+        .header-nav-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .info-badge {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            padding: 8px 18px;
+            border-radius: 25px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.1rem;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .current-number {
+            background: white;
+            color: var(--primary);
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 1.8rem;
+            font-weight: 700;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .current-number.number-pulse {
+            animation: numberPulse 0.6s ease;
+        }
+
+        @keyframes numberPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); background: #fef08a; color: var(--text); }
+        }
+
+        .btn-reset, .btn-home-header {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            color: white;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .btn-practice-header {
+            background: var(--accent);
+            border: none;
+            border-radius: 8px;
+            color: #ffffff;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            font-weight: 700;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-reset:hover, .btn-home-header:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-practice-header:hover {
+            background: var(--accent-hover);
+        }
+
+        main {
+            padding: 30px;
+        }
+
+        .media-container {
+            width: 100%;
+            margin-bottom: 25px;
+        }
+
+        .video-column {
+            width: 100%;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+            border: 1px solid var(--border);
+        }
+
+        .video-column iframe {
+            width: 100% !important;
+            height: 400px !important;
+            border: 0;
+            display: block;
+        }
+
+        /* CONTENEDOR INTERACTIVO */
+        .interactive-container {
+            display: none;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+            margin: 10px 0 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .card-preview {
+            width: 280px;
+            height: 320px;
+            background: #ffffff;
+            border: 2px solid var(--border);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--box-shadow);
+        }
+
+        .card-preview h3 {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+
+        .card-preview .image-box {
+            width: 100%;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px dashed var(--border);
+            margin: 5px 0;
+        }
+
+        .card-preview img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+
+        .card-preview p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .camera-view {
+            position: relative;
+            width: 320px;
+            height: 320px;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+            background: #000;
+            border: 3px solid var(--secondary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #webcam-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        #webcam-container canvas {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover;
+            display: block;
+            transform: scaleX(-1);
+        }
+
+        .scanning-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            box-sizing: border-box;
+            pointer-events: none;
+            animation: scanning 1.5s infinite ease-in-out;
+            border-radius: var(--border-radius);
+        }
+
+        .scanning-corner {
+            position: absolute; width: 30px; height: 30px;
+            border-color: var(--primary);
+            border-style: solid; border-width: 0; border-radius: 4px;
+        }
+
+        .scanning-corner.tl { top: 15px; left: 15px; border-top-width: 4px; border-left-width: 4px; }
+        .scanning-corner.tr { top: 15px; right: 15px; border-top-width: 4px; border-right-width: 4px; }
+        .scanning-corner.bl { bottom: 15px; left: 15px; border-bottom-width: 4px; border-left-width: 4px; }
+        .scanning-corner.br { bottom: 15px; right: 15px; border-bottom-width: 4px; border-right-width: 4px; }
+
+        @keyframes scanning {
+            0%, 100% { border-color: rgba(255, 255, 255, 0.3); box-shadow: 0 0 20px rgba(79, 70, 229, 0); }
+            50% { border-color: var(--primary); box-shadow: 0 0 30px rgba(79, 70, 229, 0.3); }
+        }
+
+        #statusBox {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        #instructionBox {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: white;
+            padding: 18px 25px;
+            border-radius: var(--border-radius);
+            margin: 15px 0;
+            box-shadow: var(--box-shadow);
+            font-size: 1.2rem;
+            text-align: center;
+            display: inline-block;
+        }
+
+        #instructionBox strong {
+            font-size: 2rem;
+            background: white;
+            color: var(--primary);
+            padding: 0 12px;
+            border-radius: 8px;
+            display: inline-block;
+            min-width: 50px;
+        }
+
+        #feedback {
+            font-weight: 600;
+            margin: 15px 0;
+            min-height: 36px;
+            font-size: 1.2rem;
+            padding: 10px 20px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            text-align: center;
+            display: none;
+        }
+
+        .feedback-correct {
+            color: var(--success);
+            background: #dcfce7;
+            border: 1px solid #bbf7d0;
+        }
+
+        .feedback-incorrect {
+            color: var(--error);
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+        }
+
+        .feedback-warning {
+            color: var(--warning);
+            background: #fef3c7;
+            border: 1px solid #fde68a;
+        }
+
+        #scanStatus {
+            font-style: italic;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .progress-container {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            height: 20px;
+            background-color: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .modal-card {
+            background: white;
+            padding: 35px;
+            border-radius: var(--border-radius);
+            text-align: center;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 1px solid var(--border);
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+
+        .btn-action:hover {
+            transform: scale(1.02);
+        }
+
+        .btn-action-secondary {
+            background: #64748b;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+
+        .btn-action-secondary:hover {
+            transform: scale(1.02);
+        }
+
+        footer {
+            text-align: center;
+            padding: 18px;
+            background: var(--bg);
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            header { flex-direction: column; text-align: center; padding: 20px; }
+            .header-info { width: 100%; justify-content: center; }
+            .media-container iframe { height: 260px !important; }
+            .interactive-container { flex-direction: column; }
+            .card-preview, .camera-view { width: 100%; max-width: 320px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <span class="header-icon">🔢</span>
+                <h1>Aprendamos los Números</h1>
+            </div>
+            
+            <div class="header-nav-buttons">
+                <a href="index_letras_numeros.html" class="btn-home-header">🏠 Menú Principal</a>
+                <a href="ejercicios_numeros.html" class="btn-practice-header">➕ Ejercicios ➔</a>
+            </div>
+
+            <div class="header-info">
+                <div class="info-badge">
+                    <span>⭐</span>
+                    <span id="scoreValue">0</span>
+                </div>
+                <div class="info-badge">
+                    <span>🔢</span>
+                    <div id="currentNumber" class="current-number">-</div>
+                </div>
+                <button id="resetBtn" class="btn-reset" title="Reiniciar juego">↺</button>
+            </div>
+        </header>
+
+        <main>
+            <div id="mediaContainer" class="media-container">
+                <div class="video-column" id="videoColumn">
+                    <div id="youtubePlayer"></div>
+                </div>
+
+                <div id="interactiveContainer" class="interactive-container">
+                    <div id="cardPreviewElement" class="card-preview">
+                        <h3>🎴 Tarjeta a buscar</h3>
+                        <div class="image-box">
+                            <img id="targetCardImageElement" src="" alt="Guía" onerror="this.src='https://dummyimage.com/200x200/4f46e5/ffffff.png&text=Número'">
+                        </div>
+                        <p>Muestra este número a la cámara</p>
+                    </div>
+
+                    <div id="cameraViewElement" class="camera-view">
+                        <div id="webcam-container"></div>
+                        <div class="scanning-overlay">
+                            <div class="scanning-corner tl"></div>
+                            <div class="scanning-corner tr"></div>
+                            <div class="scanning-corner bl"></div>
+                            <div class="scanning-corner br"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="statusBox">
+                <div id="instructionBox" style="display: none;">
+                    📷 Enfoca la tarjeta del número <strong id="expectedNumberText">0</strong>
+                </div>
+                <div id="feedback"></div>
+                <p id="scanStatus">Cargando la IA...</p>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-header">
+                    <span>📊 Progreso</span>
+                    <span id="progressText">0/10 números</span>
+                </div>
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Actividad educativa para aprender los números 🎓</p>
+        </footer>
+    </div>
+
+    <div id="completionModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+            <div style="font-size: 3.5rem; margin-bottom: 10px;">🏆🎉</div>
+            <h2 style="color: var(--text); font-size: 1.8rem; margin-bottom: 10px;">¡Excelente Trabajo!</h2>
+            <p style="color: var(--text-muted); font-size: 1rem; margin-bottom: 20px;">
+                Has repasado todos los números con éxito.
+            </p>
+            <div style="display: flex; gap: 10px; flex-direction: column;">
+                <button id="modalRepeatBtn" class="btn-action">
+                    ↺ Repetir Lección
+                </button>
+                <button id="modalNextBtn" class="btn-action">
+                    ➕ Ir a Práctica ➔
+                </button>
+                <button id="modalExitBtn" class="btn-action-secondary">
+                    🏠 Salir al Menú Principal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
+
+    <script>
+        const URL_MODELO = 'https://teachablemachine.withgoogle.com/models/KW-qv5rO4/';
+
+        const savedConfig = localStorage.getItem('juegoNumerosConfig');
+        let config = {
+            videoId: 'NiaPXDXFTkc',
+            checkpoints: [
+                { time: 23, number: '0', image: 'img/0.png'},
+                { time: 30, number: '1', image: 'img/1.png' },
+                { time: 40, number: '2', image: 'img/2.png' },
+                { time: 55, number: '3', image: 'img/3.png' },
+                { time: 70, number: '4', image: 'img/4.png' },
+                { time: 89, number: '5', image: 'img/5.png' },
+                { time: 107, number: '6', image: 'img/6.png' },
+                { time: 126, number: '7', image: 'img/7.png' },
+                { time: 149, number: '8', image: 'img/8.png' },
+                { time: 174, number: '9', image: 'img/9.png' }
+            ]
+        };
+
+        if (savedConfig) {
+            config = JSON.parse(savedConfig);
+        }
+
+        const checkpoints = config.checkpoints;
+        const totalNumbers = checkpoints.length;
+
+        let scanActive = false;
+        let player;
+        let isCameraReady = false;
+        let lastCheckpointNotified = -1;
+        let score = 0;
+        let currentCheckpoint = 0;
+        let model, webcam, maxPredictions;
+        let isProcessingMatch = false;
+
+        const scoreValueElement = document.getElementById('scoreValue');
+        const currentNumberElement = document.getElementById('currentNumber');
+        const progressFillElement = document.getElementById('progressFill');
+        const progressTextElement = document.getElementById('progressText');
+        const feedbackElement = document.getElementById('feedback');
+        const scanStatusElement = document.getElementById('scanStatus');
+        const expectedNumberText = document.getElementById('expectedNumberText');
+        const webcamContainerElement = document.getElementById('webcam-container');
+        const resetBtn = document.getElementById('resetBtn');
+        const targetCardImageElement = document.getElementById('targetCardImageElement');
+        const videoColumn = document.getElementById('videoColumn');
+        const interactiveContainer = document.getElementById('interactiveContainer');
+        const instructionBox = document.getElementById('instructionBox');
+        const completionModal = document.getElementById('completionModal');
+
+        resetBtn.addEventListener('click', resetGame);
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('youtubePlayer', {
+                height: '360',
+                width: '640',
+                videoId: config.videoId,
+                events: { 'onStateChange': onPlayerStateChange }
+            });
+        }
+
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.PLAYING) {
+                requestAnimationFrame(checkTime);
+            }
+        }
+
+        function checkTime() {
+            if (player && player.getPlayerState() === YT.PlayerState.PLAYING) {
+                if (currentCheckpoint < totalNumbers) {
+                    const checkpoint = checkpoints[currentCheckpoint];
+                    const currentTime = player.getCurrentTime();
+                    
+                    if (currentTime >= checkpoint.time && lastCheckpointNotified !== currentCheckpoint) {
+                        player.pauseVideo();
+                        
+                        videoColumn.style.display = 'none';
+
+                        const fallbackImg = `https://dummyimage.com/200x200/4f46e5/ffffff.png&text=${checkpoint.number}`;
+                        targetCardImageElement.src = checkpoint.image || fallbackImg;
+
+                        interactiveContainer.style.display = 'flex';
+                        instructionBox.style.display = 'inline-block';
+                        expectedNumberText.textContent = checkpoint.number;
+                        updateCurrentNumber(checkpoint.number);
+                        
+                        hideFeedback();
+                        scanStatusElement.textContent = '🧠 Analizando imagen de la cámara...';
+                        
+                        speak(`Muestra el número ${checkpoint.number}`);
+                        lastCheckpointNotified = currentCheckpoint;
+                        scanActive = true;
+                    }
+                }
+                requestAnimationFrame(checkTime);
+            }
+        }
+
+        function handleCorrectMatch() {
+            isProcessingMatch = true;
+            scanActive = false;
+
+            const number = checkpoints[currentCheckpoint].number;
+
+            showFeedback(`✅ ¡Correcto! Número ${number} (+10 pts)`, 'feedback-correct');
+            updateScore(10);
+            speak(`Correcto, número ${number}`);
+            updateCurrentNumber(number);
+
+            interactiveContainer.style.display = 'none';
+            instructionBox.style.display = 'none';
+            videoColumn.style.display = 'block';
+
+            scanStatusElement.textContent = '🎯 ¡Muy bien! Preparando el siguiente...';
+            currentCheckpoint++;
+            updateProgress();
+
+            setTimeout(() => {
+                isProcessingMatch = false;
+                if (currentCheckpoint < totalNumbers) {
+                    if (player) player.playVideo();
+                } else {
+                    speak('¡Felicidades! Has completado todos los números');
+                    showCompletionModal();
+                }
+            }, 1500);
+        }
+
+        function handleIncorrectMatch(detectedNumber) {
+            isProcessingMatch = true; 
+            const expectedNumber = checkpoints[currentCheckpoint].number;
+
+            showFeedback(`❌ No coincide. Esperaba: ${expectedNumber}`, 'feedback-incorrect');
+            updateScore(-5);
+            speak(`Incorrecto. Muestra el número ${expectedNumber}`);
+
+            setTimeout(() => {
+                hideFeedback();
+                isProcessingMatch = false;
+            }, 2000); 
+        }
+
+        function resetGame() {
+            scanActive = false;
+            isProcessingMatch = false;
+            score = 0;
+            currentCheckpoint = 0;
+            lastCheckpointNotified = -1;
+
+            updateScore(0);
+            updateProgress();
+            updateCurrentNumber('-');
+            hideFeedback();
+
+            interactiveContainer.style.display = 'none';
+            instructionBox.style.display = 'none';
+            completionModal.style.display = 'none';
+            videoColumn.style.display = 'block';
+
+            if (player) {
+                player.seekTo(0);
+                player.playVideo();
+            }
+        }
+
+        async function initAI() {
+            try {
+                scanStatusElement.textContent = '🧠 Cargando IA y cámara...';
+                const modelURL = URL_MODELO + 'model.json';
+                const metadataURL = URL_MODELO + 'metadata.json';
+
+                model = await tmImage.load(modelURL, metadataURL);
+                maxPredictions = model.getTotalClasses();
+
+                webcam = new tmImage.Webcam(400, 300, true);
+                await webcam.setup();
+                await webcam.play();
+
+                webcamContainerElement.innerHTML = '';
+                webcamContainerElement.appendChild(webcam.canvas);
+                isCameraReady = true;
+                scanStatusElement.textContent = '📸 Cámara lista - Reproduce el vídeo para empezar';
+                
+                requestAnimationFrame(loop);
+            } catch (err) {
+                console.error(err);
+                scanStatusElement.textContent = '⚠️ Error al iniciar cámara/modelo';
+            }
+        }
+
+        async function loop() {
+            if (webcam && isCameraReady) {
+                webcam.update();
+                if (scanActive && !isProcessingMatch) {
+                    await predict();
+                }
+            }
+            requestAnimationFrame(loop);
+        }
+
+        async function predict() {
+            if (!model || !webcam) return;
+
+            const prediction = await model.predict(webcam.canvas);
+            const expectedNumber = checkpoints[currentCheckpoint]?.number;
+
+            let highestProbability = 0;
+            let bestClass = '';
+
+            for (let i = 0; i < maxPredictions; i++) {
+                if (prediction[i].probability > highestProbability) {
+                    highestProbability = prediction[i].probability;
+                    bestClass = prediction[i].className;
+                }
+            }
+
+            const detectedLabel = normalizePredictionLabel(bestClass);
+            scanStatusElement.textContent = `🧠 Detectado: ${detectedLabel || bestClass} (${Math.round(highestProbability * 100)}%)`;
+
+            if (detectedLabel === expectedNumber && highestProbability > 0.70) {
+                handleCorrectMatch();
+            } 
+            else if (highestProbability > 0.75 && detectedLabel && detectedLabel !== expectedNumber && !isProcessingMatch) {
+                handleIncorrectMatch(detectedLabel || bestClass);
+            }
+        }
+
+        function normalizePredictionLabel(label) {
+            const value = String(label || '').trim().toUpperCase();
+            const wordMap = {
+                'CERO': '0', 'ZERO': '0', 'UNO': '1', 'ONE': '1',
+                'DOS': '2', 'TWO': '2', 'TRES': '3', 'THREE': '3',
+                'CUATRO': '4', 'FOUR': '4', 'CINCO': '5', 'FIVE': '5',
+                'SEIS': '6', 'SIX': '6', 'SIETE': '7', 'SEVEN': '7',
+                'OCHO': '8', 'EIGHT': '8', 'NUEVE': '9', 'NINE': '9'
+            };
+            return wordMap[value] || value.replace(/[^0-9]/g, '');
+        }
+
+        function updateCurrentNumber(number) {
+            currentNumberElement.textContent = number || '-';
+            currentNumberElement.classList.remove('number-pulse');
+            void currentNumberElement.offsetWidth;
+            currentNumberElement.classList.add('number-pulse');
+        }
+
+        function updateScore(points) {
+            score = Math.max(0, score + points);
+            scoreValueElement.textContent = score;
+        }
+
+        function updateProgress() {
+            const progress = (currentCheckpoint / totalNumbers) * 100;
+            progressFillElement.style.width = `${Math.min(100, progress)}%`;
+            progressTextElement.textContent = `${currentCheckpoint}/${totalNumbers} números`;
+        }
+
+        function showFeedback(message, type) {
+            feedbackElement.textContent = message;
+            feedbackElement.className = type || '';
+            feedbackElement.style.display = 'inline-block';
+        }
+
+        function hideFeedback() {
+            feedbackElement.textContent = '';
+            feedbackElement.style.display = 'none';
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.9;
+                utterance.lang = 'es-ES';
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function showCompletionModal() {
+            completionModal.style.display = 'flex';
+        }
+
+        document.getElementById('modalRepeatBtn').addEventListener('click', () => {
+            resetGame();
+        });
+
+        document.getElementById('modalNextBtn').addEventListener('click', () => {
+            window.location.href = 'ejercicios_numeros.html';
+        });
+
+        document.getElementById('modalExitBtn').addEventListener('click', () => {
+            window.location.href = 'index_letras_numeros.html';
+        });
+
+        window.addEventListener('DOMContentLoaded', initAI);
+    </script>
+</body>
+</html>

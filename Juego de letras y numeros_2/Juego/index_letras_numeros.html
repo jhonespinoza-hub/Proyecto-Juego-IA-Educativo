@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Escolar - Selección de Juego</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #4a90e2, #357abd);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      position: relative;
+    }
+
+    .btn-teacher-access {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.9);
+      color: #2c3e50;
+      padding: 10px 18px;
+      border-radius: 20px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 0.9rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-teacher-access:hover {
+      background: #ffffff;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+    }
+
+    .card-login {
+      background: white;
+      padding: 30px;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 420px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+    .card-login h2 { color: #2c3e50; margin-top: 10px; }
+    
+    .guest-container {
+      background-color: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      padding: 10px 14px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+    .guest-container label {
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: #334155;
+      cursor: pointer;
+    }
+    .guest-container input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 1rem;
+      box-sizing: border-box;
+      transition: opacity 0.2s, background-color 0.2s;
+    }
+    .form-control:disabled {
+      background-color: #f8fafc;
+      opacity: 0.6;
+    }
+
+    .btn-start {
+      width: 100%;
+      padding: 14px;
+      background: #2ecc71;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: 15px;
+      transition: background 0.3s;
+    }
+    .btn-start:disabled { background: #cbd5e1; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <a href="login.html" class="btn-teacher-access">
+    👨‍🏫 Acceso Docentes
+  </a>
+
+  <div class="card-login">
+    <div style="font-size: 50px;">🎓</div>
+    <h2>¡Bienvenido al Juego!</h2>
+    <p style="color: #64748b; font-size: 0.9rem;">Selecciona tus datos o entra como invitado</p>
+
+    <div class="guest-container" onclick="toggleInvitadoByContainer(event)">
+      <label for="checkInvitado">🎮 Entrar como Invitado</label>
+      <input type="checkbox" id="checkInvitado" onchange="toggleInvitado()">
+    </div>
+
+    <!-- 1. SELECCIONAR DOCENTE -->
+    <select id="selectDocente" class="form-control" onchange="cargarCursosPorDocente()">
+      <option value="">Cargando docentes...</option>
+    </select>
+
+    <!-- 2. SELECCIONAR CURSO -->
+    <select id="selectCurso" class="form-control" disabled onchange="cargarEstudiantes()">
+      <option value="">-- 2. Selecciona tu Curso / Aula --</option>
+    </select>
+
+    <!-- 3. SELECCIONAR O BUSCAR ESTUDIANTE (Escribir + Scroll Desplegable) -->
+    <input 
+      type="text" 
+      id="inputEstudiante" 
+      class="form-control" 
+      list="listaEstudiantes" 
+      placeholder="-- 3. Busca o Selecciona tu Nombre --" 
+      disabled 
+      onfocus="this.value=''" 
+      oninput="validarFormulario()"
+    >
+    <datalist id="listaEstudiantes"></datalist>
+
+    <!-- 4. SELECCIONAR MATERIA -->
+    <select id="selectMateria" class="form-control" onchange="validarFormulario()">
+      <option value="">-- 4. Selecciona la Materia o Juego --</option>
+      <option value="lenguaje">🔤 Lenguaje y Comunicación</option>
+      <option value="matematicas">🔢 Matemáticas</option>
+      <option value="tangram">🧩 Tangram / Rompecabezas</option>
+    </select>
+
+    <button id="btnIngresar" class="btn-start" disabled onclick="ingresarAlJuego()">
+      🚀 Iniciar Ejercicios
+    </button>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:3000/api';
+    let mapaAlumnos = {}; // Mapea los nombres en minúsculas con su ID real
+
+    document.addEventListener('DOMContentLoaded', cargarDocentes);
+
+    // 1. Cargar lista de Docentes
+    async function cargarDocentes() {
+      const selectDocente = document.getElementById('selectDocente');
+      try {
+        const response = await fetch(`${API_URL}/docentes`);
+        const docentes = await response.json();
+
+        selectDocente.innerHTML = '<option value="">-- 1. Selecciona tu Docente --</option>';
+        docentes.forEach(docente => {
+          const id = docente.id_docente || docente.id;
+          const nombre = docente.nombre;
+          selectDocente.innerHTML += `<option value="${id}">${nombre}</option>`;
+        });
+      } catch (error) {
+        console.error('Error al obtener docentes:', error);
+        selectDocente.innerHTML = '<option value="">Error al cargar docentes</option>';
+      }
+    }
+
+    // 2. Cargar Cursos según el Docente seleccionado
+    async function cargarCursosPorDocente() {
+      const docenteId = document.getElementById('selectDocente').value;
+      const selectCurso = document.getElementById('selectCurso');
+      const inputEstudiante = document.getElementById('inputEstudiante');
+      const datalist = document.getElementById('listaEstudiantes');
+
+      selectCurso.innerHTML = '<option value="">-- 2. Selecciona tu Curso / Aula --</option>';
+      datalist.innerHTML = '';
+      inputEstudiante.value = '';
+      inputEstudiante.disabled = true;
+      mapaAlumnos = {};
+
+      if (!docenteId) {
+        selectCurso.disabled = true;
+        validarFormulario();
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/cursos/docente/${docenteId}`);
+        const cursos = await response.json();
+
+        if (cursos.length > 0) {
+          cursos.forEach(curso => {
+            const id = curso.id_curso || curso.id;
+            const nombre = curso.nombre_curso || curso.nombre;
+            selectCurso.innerHTML += `<option value="${id}">${nombre}</option>`;
+          });
+          selectCurso.disabled = false;
+        } else {
+          selectCurso.innerHTML = '<option value="">-- No hay cursos asignados a este docente --</option>';
+          selectCurso.disabled = true;
+        }
+      } catch (error) {
+        console.error('Error al obtener cursos:', error);
+        selectCurso.innerHTML = '<option value="">Error al cargar cursos</option>';
+        selectCurso.disabled = true;
+      }
+
+      validarFormulario();
+    }
+
+    // 3. Cargar Estudiantes en el Datalist (Para Scroll y Búsqueda por Texto)
+    async function cargarEstudiantes() {
+      const cursoId = document.getElementById('selectCurso').value;
+      const inputEstudiante = document.getElementById('inputEstudiante');
+      const datalist = document.getElementById('listaEstudiantes');
+
+      datalist.innerHTML = '';
+      inputEstudiante.value = '';
+      mapaAlumnos = {};
+
+      if (!cursoId) {
+        inputEstudiante.disabled = true;
+        validarFormulario();
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/alumnos/${cursoId}`);
+        const alumnos = await response.json();
+
+        if (alumnos.length > 0) {
+          alumnos.forEach(est => {
+            const id = est.id_alumno || est.id;
+            const nombre = est.nombre_completo || est.nombre;
+            
+            mapaAlumnos[nombre.toLowerCase().trim()] = id;
+            datalist.innerHTML += `<option value="${nombre}"></option>`;
+          });
+          inputEstudiante.disabled = false;
+        } else {
+          inputEstudiante.placeholder = 'No hay alumnos en este curso';
+          inputEstudiante.disabled = true;
+        }
+      } catch (error) {
+        console.error('Error al obtener alumnos:', error);
+        inputEstudiante.placeholder = '❌ Error al cargar alumnos';
+        inputEstudiante.disabled = true;
+      }
+      
+      validarFormulario();
+    }
+
+    function toggleInvitadoByContainer(e) {
+      if (e.target.tagName !== 'INPUT') {
+        const check = document.getElementById('checkInvitado');
+        check.checked = !check.checked;
+        toggleInvitado();
+      }
+    }
+
+    function toggleInvitado() {
+      const esInvitado = document.getElementById('checkInvitado').checked;
+      const selectDocente = document.getElementById('selectDocente');
+      const selectCurso = document.getElementById('selectCurso');
+      const inputEstudiante = document.getElementById('inputEstudiante');
+
+      if (esInvitado) {
+        selectDocente.disabled = true;
+        selectCurso.disabled = true;
+        inputEstudiante.disabled = true;
+        selectDocente.value = "";
+        selectCurso.value = "";
+        inputEstudiante.value = "";
+      } else {
+        selectDocente.disabled = false;
+        if (selectDocente.value) {
+          selectCurso.disabled = false;
+        }
+        if (selectCurso.value && Object.keys(mapaAlumnos).length > 0) {
+          inputEstudiante.disabled = false;
+        }
+      }
+
+      validarFormulario();
+    }
+
+    function validarFormulario() {
+      const esInvitado = document.getElementById('checkInvitado').checked;
+      const nombreEscrito = document.getElementById('inputEstudiante').value.toLowerCase().trim();
+      const materia = document.getElementById('selectMateria').value;
+      const btn = document.getElementById('btnIngresar');
+
+      const estudianteId = mapaAlumnos[nombreEscrito] || null;
+
+      if (esInvitado) {
+        btn.disabled = !materia;
+      } else {
+        btn.disabled = !(estudianteId && materia);
+      }
+    }
+
+    function ingresarAlJuego() {
+      try {
+        const esInvitado = document.getElementById('checkInvitado').checked;
+        const materia = document.getElementById('selectMateria').value;
+        const nombreEscrito = document.getElementById('inputEstudiante').value.toLowerCase().trim();
+
+        const estudianteId = esInvitado ? 'invitado' : mapaAlumnos[nombreEscrito];
+
+        if (!materia) throw new Error('Debes seleccionar una materia');
+        if (!esInvitado && !estudianteId) throw new Error('Debes seleccionar un estudiante de la lista');
+
+        sessionStorage.setItem('estudiante_id', estudianteId);
+
+        let url = '';
+        if (materia === 'lenguaje') url = 'juegoletras2.html';
+        else if (materia === 'matematicas') url = 'juegonumeros2.html';
+        else if (materia === 'tangram') url = 'Tangram.html';
+
+        if (!url) throw new Error('Materia no válida');
+
+        window.location.href = url;
+      } catch (error) {
+        console.error('❌ Error al ingresar al juego:', error);
+        mostrarAlerta('Error', error.message, 'error');
+      }
+    }
+
+    function mostrarAlerta(titulo, mensaje, tipo = 'info') {
+      const alerta = document.createElement('div');
+      alerta.style.cssText = `
+        position: fixed; top: 20px; right: 20px; padding: 16px;
+        border-radius: 8px; color: white; font-weight: bold; z-index: 9999;
+        max-width: 300px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      `;
+
+      if (tipo === 'error') alerta.style.background = '#dc2626';
+      else if (tipo === 'success') alerta.style.background = '#16a34a';
+      else alerta.style.background = '#3b82f6';
+
+      alerta.innerHTML = `<strong>${titulo}</strong><br>${mensaje}`;
+      document.body.appendChild(alerta);
+      setTimeout(() => alerta.remove(), 5000);
+    }
+  </script>
+</body>
+</html>
