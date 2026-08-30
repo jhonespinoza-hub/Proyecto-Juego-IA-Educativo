@@ -1,4 +1,4 @@
-require('dotenv').config(); // <-- Carga de variables de entorno
+require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
@@ -9,7 +9,7 @@ const db = require('./db');
 
 const app = express();
 
-// Configuración amplia de CORS para desarrollo
+// Configuración CORS y Parseo de JSON
 app.use(cors({
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -18,10 +18,10 @@ app.use(cors({
 
 app.use(express.json());
 
-// Configuración de Multer con filtros de seguridad para Excel
+// Configuración Multer para carga de Excel
 const upload = multer({ 
     storage: multer.memoryStorage(),
-    limits: { fileSize: 5 * 1024 * 1024 }, // Límite de 5 MB
+    limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         const allowedMimes = [
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -35,15 +35,11 @@ const upload = multer({
     }
 });
 
-// ==========================================
-// FUNCIÓN DE AUTO-CREACIÓN DE ADMINISTRADOR
-// ==========================================
+// Inicialización de credenciales de Administrador Principal
 async function inicializarAdmin() {
     try {
-        // Lee las credenciales del archivo .env; si no existen, usa valores por defecto
         const correoAdmin = process.env.ADMIN_EMAIL || 'admin@escuela.com';
         const passwordPlana = process.env.ADMIN_PASSWORD || 'admin1234';
-
         const passwordHash = await bcrypt.hash(passwordPlana, 10);
 
         const [rows] = await db.query('SELECT * FROM docentes WHERE correo = ?', [correoAdmin]);
@@ -94,8 +90,8 @@ app.post('/api/login', async (req, res) => {
             status: 'ok',
             message: 'Acceso concedido',
             docente: {
-                id_docente: docente.id_docente || docente.id,
-                nombre: docente.nombre || docente.nombre_completo,
+                id_docente: docente.id_docente,
+                nombre: docente.nombre,
                 correo: docente.correo,
                 rol: docente.rol || 'docente'
             }
@@ -106,10 +102,9 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// Oculta al Administrador de la lista pública desplegable en el frontend
 app.get('/api/docentes', async (req, res) => {
     try {
-        const [rows] = await db.query("SELECT id_docente, nombre, correo, rol FROM docentes WHERE rol != 'admin'");
+        const [rows] = await db.query("SELECT id_docente, nombre, correo, rol FROM docentes WHERE rol != 'admin' ORDER BY nombre ASC");
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -117,7 +112,7 @@ app.get('/api/docentes', async (req, res) => {
 });
 
 app.post('/api/docentes', async (req, res) => {
-    const { nombre, correo, password } = req.body;
+    const { nombre, correo, password, rol } = req.body;
     if (!nombre || !correo || !password) {
         return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
     }
@@ -125,10 +120,10 @@ app.post('/api/docentes', async (req, res) => {
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
         const [result] = await db.query(
-            'INSERT INTO docentes (nombre, correo, password, rol) VALUES (?, ?, ?, "docente")',
-            [nombre, correo, hashedPassword]
+            'INSERT INTO docentes (nombre, correo, password, rol) VALUES (?, ?, ?, ?)',
+            [nombre.trim(), correo.trim(), hashedPassword, rol || 'docente']
         );
-        res.status(201).json({ status: 'ok', id_docente: result.insertId });
+        res.status(201).json({ status: 'ok', id_docente: result.insertId, message: 'Docente registrado con éxito.' });
     } catch (err) {
         if (err.code === 'ER_DUP_ENTRY') {
             return res.status(400).json({ error: 'El correo electrónico ya se encuentra registrado.' });
@@ -138,7 +133,86 @@ app.post('/api/docentes', async (req, res) => {
 });
 
 // ==========================================
-// 2. RUTAS DE CONTROL TOTAL (ADMINISTRADOR)
+// 2. PERIODOS ACADÉMICOS
+// ==========================================
+
+app.get('/api/periodos', async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT * FROM periodos_academicos ORDER BY fecha_inicio DESC, id_periodo DESC');
+        res.json(rows);
+    } catch (err) {
+        console.error('Error al obtener periodos:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/periodos', async (req, res) => {
+    const { nombre_periodo, fecha_inicio, fecha_fin, estado } = req.body;
+
+    if (!nombre_periodo || !fecha_inicio || !fecha_fin) {
+        return res.status(400).json({ error: 'Nombre del periodo, fecha de inicio y fecha de fin son obligatorios.' });
+    }
+
+    try {
+        const [result] = await db.query(
+            'INSERT INTO periodos_academicos (nombre_periodo, fecha_inicio, fecha_fin, estado) VALUES (?, ?, ?, ?)',
+            [nombre_periodo.trim(), fecha_inicio, fecha_fin, estado || 'Activo']
+        );
+        res.status(201).json({ status: 'ok', message: 'Periodo académico creado con éxito.', id_periodo: result.insertId });
+    } catch (err) {
+        console.error('Error al crear periodo:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/periodos/:id', async (req, res) => {
+    const { id } = req.params;
+    const { nombre_periodo, fecha_inicio, fecha_fin, estado } = req.body;
+
+    if (!nombre_periodo || !fecha_inicio || !fecha_fin) {
+        return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
+    }
+
+    try {
+        const [result] = await db.query(
+            'UPDATE periodos_academicos SET nombre_periodo = ?, fecha_inicio = ?, fecha_fin = ?, estado = ? WHERE id_periodo = ?',
+            [nombre_periodo.trim(), fecha_inicio, fecha_fin, estado || 'Activo', id]
+        );
+
+        if (result.affectedRows > 0) {
+            res.json({ status: 'ok', message: 'Periodo académico actualizado correctamente.' });
+        } else {
+            res.status(404).json({ error: 'No se encontró el periodo especificado.' });
+        }
+    } catch (err) {
+        console.error('Error al actualizar periodo:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/periodos/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [cursos] = await db.query('SELECT id_curso FROM cursos WHERE id_periodo = ?', [id]);
+        if (cursos.length > 0) {
+            return res.status(400).json({ error: 'No se puede eliminar el periodo porque existen cursos asociados a él.' });
+        }
+
+        const [result] = await db.query('DELETE FROM periodos_academicos WHERE id_periodo = ?', [id]);
+
+        if (result.affectedRows > 0) {
+            res.json({ status: 'ok', message: 'Periodo académico eliminado con éxito.' });
+        } else {
+            res.status(404).json({ error: 'No se encontró el periodo especificado.' });
+        }
+    } catch (err) {
+        console.error('Error al eliminar periodo:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ==========================================
+// 3. RUTAS DE CONTROL TOTAL (ADMINISTRADOR)
 // ==========================================
 
 app.get('/api/admin/docentes', async (req, res) => {
@@ -150,14 +224,76 @@ app.get('/api/admin/docentes', async (req, res) => {
     }
 });
 
+// CREAR DOCENTE DESDE PANEL ADMIN
+app.post('/api/admin/docentes', async (req, res) => {
+    const { nombre, correo, password, rol } = req.body;
+    if (!nombre || !correo || !password) {
+        return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
+    }
+
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const [result] = await db.query(
+            'INSERT INTO docentes (nombre, correo, password, rol) VALUES (?, ?, ?, ?)',
+            [nombre.trim(), correo.trim(), hashedPassword, rol || 'docente']
+        );
+        res.status(201).json({ status: 'ok', id_docente: result.insertId, message: 'Docente creado con éxito.' });
+    } catch (err) {
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ error: 'El correo electrónico ya se encuentra registrado.' });
+        }
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ACTUALIZAR DOCENTE DESDE PANEL ADMIN
+app.put('/api/admin/docentes/:id', async (req, res) => {
+    const { id } = req.params;
+    const { nombre, correo, password, rol } = req.body;
+
+    if (!nombre || !correo) {
+        return res.status(400).json({ error: 'Nombre y correo son obligatorios.' });
+    }
+
+    try {
+        const [dupCheck] = await db.query(
+            'SELECT id_docente FROM docentes WHERE correo = ? AND id_docente != ?',
+            [correo.trim(), id]
+        );
+
+        if (dupCheck.length > 0) {
+            return res.status(400).json({ error: 'El correo electrónico ya está en uso por otro docente.' });
+        }
+
+        if (password && password.trim() !== '') {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            await db.query(
+                'UPDATE docentes SET nombre = ?, correo = ?, password = ?, rol = ? WHERE id_docente = ?',
+                [nombre.trim(), correo.trim(), hashedPassword, rol || 'docente', id]
+            );
+        } else {
+            await db.query(
+                'UPDATE docentes SET nombre = ?, correo = ?, rol = ? WHERE id_docente = ?',
+                [nombre.trim(), correo.trim(), rol || 'docente', id]
+            );
+        }
+
+        res.json({ status: 'ok', message: 'Docente actualizado correctamente.' });
+    } catch (err) {
+        console.error('Error al actualizar docente:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.delete('/api/admin/docentes/:id', async (req, res) => {
     const { id } = req.params;
     try {
-        // Validación para evitar borrar al administrador
         const [docente] = await db.query('SELECT rol FROM docentes WHERE id_docente = ?', [id]);
         if (docente.length > 0 && docente[0].rol === 'admin') {
             return res.status(400).json({ error: 'No se puede eliminar al usuario Administrador Principal.' });
         }
+
+        await db.query('UPDATE cursos SET id_docente = NULL WHERE id_docente = ?', [id]);
 
         const [result] = await db.query('DELETE FROM docentes WHERE id_docente = ?', [id]);
         
@@ -173,17 +309,76 @@ app.delete('/api/admin/docentes/:id', async (req, res) => {
 });
 
 app.get('/api/admin/cursos', async (req, res) => {
+    const { id_periodo } = req.query;
     try {
-        const query = `
-            SELECT c.id_curso, c.nombre_curso, c.id_docente, d.nombre AS nombre_docente, d.correo AS correo_docente 
+        let query = `
+            SELECT 
+                c.id_curso, 
+                c.nombre_curso, 
+                c.id_docente, 
+                c.id_periodo,
+                p.nombre_periodo,
+                d.nombre AS nombre_docente, 
+                d.correo AS correo_docente 
             FROM cursos c 
             LEFT JOIN docentes d ON c.id_docente = d.id_docente 
-            ORDER BY c.id_curso DESC
+            LEFT JOIN periodos_academicos p ON c.id_periodo = p.id_periodo
         `;
-        const [rows] = await db.query(query);
+        const params = [];
+
+        if (id_periodo) {
+            query += ' WHERE c.id_periodo = ?';
+            params.push(id_periodo);
+        }
+
+        query += ' ORDER BY c.id_curso DESC';
+
+        const [rows] = await db.query(query, params);
         res.json(rows);
     } catch (err) {
         console.error('Error al obtener cursos admin:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/admin/cursos/:id', async (req, res) => {
+    const { id } = req.params;
+    const { nombre_curso, id_periodo, id_docente } = req.body;
+
+    try {
+        let query = 'UPDATE cursos SET ';
+        const fields = [];
+        const params = [];
+
+        if (nombre_curso !== undefined) {
+            fields.push('nombre_curso = ?');
+            params.push(nombre_curso.trim());
+        }
+        if (id_periodo !== undefined) {
+            fields.push('id_periodo = ?');
+            params.push(id_periodo || null);
+        }
+        if (id_docente !== undefined) {
+            fields.push('id_docente = ?');
+            params.push(id_docente || null);
+        }
+
+        if (fields.length === 0) {
+            return res.status(400).json({ error: 'No se enviaron campos para actualizar.' });
+        }
+
+        query += fields.join(', ') + ' WHERE id_curso = ?';
+        params.push(id);
+
+        const [result] = await db.query(query, params);
+
+        if (result.affectedRows > 0) {
+            res.json({ status: 'ok', message: 'Curso actualizado con éxito.' });
+        } else {
+            res.status(404).json({ error: 'No se encontró el curso especificado.' });
+        }
+    } catch (err) {
+        console.error('Error al editar curso:', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -192,12 +387,11 @@ app.put('/api/admin/cursos/:id/docente', async (req, res) => {
     const { id } = req.params;
     const { id_docente } = req.body;
 
-    if (!id_docente) {
-        return res.status(400).json({ error: 'Debes seleccionar un docente válido.' });
-    }
-
     try {
-        const [result] = await db.query('UPDATE cursos SET id_docente = ? WHERE id_curso = ?', [id_docente, id]);
+        const [result] = await db.query(
+            'UPDATE cursos SET id_docente = ? WHERE id_curso = ?',
+            [id_docente || null, id]
+        );
 
         if (result.affectedRows > 0) {
             res.json({ status: 'ok', message: 'Docente reasignado al curso con éxito.' });
@@ -210,14 +404,13 @@ app.put('/api/admin/cursos/:id/docente', async (req, res) => {
     }
 });
 
-// ELIMINAR CURSO COMPLETO (FINAL DE CICLO ESCOLAR)
 app.delete('/api/admin/cursos/:id', async (req, res) => {
     const { id } = req.params;
     try {
         const [result] = await db.query('DELETE FROM cursos WHERE id_curso = ?', [id]);
 
         if (result.affectedRows > 0) {
-            res.json({ status: 'ok', message: 'Curso y todos sus alumnos/historiales asociados fueron eliminados correctamente.' });
+            res.json({ status: 'ok', message: 'Curso y sus registros asociados fueron eliminados correctamente.' });
         } else {
             res.status(404).json({ error: 'No se encontró el curso especificado.' });
         }
@@ -228,18 +421,32 @@ app.delete('/api/admin/cursos/:id', async (req, res) => {
 });
 
 // ==========================================
-// 3. API DE JUEGO, ALUMNOS Y REPORTES
+// 4. API DE JUEGO, ALUMNOS Y REPORTES
 // ==========================================
 
 app.get('/api/cursos', async (req, res) => {
-    const { id_docente } = req.query;
+    const { id_docente, id_periodo } = req.query;
     try {
-        let query = 'SELECT * FROM cursos';
+        let query = `
+            SELECT c.*, p.nombre_periodo 
+            FROM cursos c
+            LEFT JOIN periodos_academicos p ON c.id_periodo = p.id_periodo
+        `;
+        const conditions = [];
         const params = [];
 
         if (id_docente) {
-            query += ' WHERE id_docente = ?';
+            conditions.push('c.id_docente = ?');
             params.push(id_docente);
+        }
+
+        if (id_periodo) {
+            conditions.push('c.id_periodo = ?');
+            params.push(id_periodo);
+        }
+
+        if (conditions.length > 0) {
+            query += ' WHERE ' + conditions.join(' AND ');
         }
 
         const [rows] = await db.query(query, params);
@@ -252,12 +459,26 @@ app.get('/api/cursos', async (req, res) => {
 app.get('/api/cursos/docente/:idDocente', async (req, res) => {
     try {
         const idDocente = req.params.idDocente;
+        const { id_periodo } = req.query;
         
         if (!idDocente || idDocente === 'undefined' || idDocente === 'null') {
             return res.status(400).json({ error: 'ID de docente no válido.' });
         }
 
-        const [rows] = await db.query('SELECT * FROM cursos WHERE id_docente = ?', [idDocente]);
+        let query = `
+            SELECT c.*, p.nombre_periodo 
+            FROM cursos c
+            LEFT JOIN periodos_academicos p ON c.id_periodo = p.id_periodo
+            WHERE c.id_docente = ?
+        `;
+        const params = [idDocente];
+
+        if (id_periodo) {
+            query += ' AND c.id_periodo = ?';
+            params.push(id_periodo);
+        }
+
+        const [rows] = await db.query(query, params);
         res.json(rows);
     } catch (err) {
         console.error('Error al consultar cursos del docente:', err);
@@ -291,6 +512,40 @@ app.get('/api/alumnos/:idCurso', async (req, res) => {
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/alumnos/:id', async (req, res) => {
+    const { id } = req.params;
+    const { nombre_completo } = req.body;
+
+    if (!nombre_completo || !nombre_completo.trim()) {
+        return res.status(400).json({ error: 'El nombre completo es obligatorio.' });
+    }
+
+    try {
+        const [existentes] = await db.query(
+            'SELECT id_alumno FROM alumnos WHERE LOWER(nombre_completo) = LOWER(?) AND id_alumno != ?',
+            [nombre_completo.trim(), id]
+        );
+
+        if (existentes.length > 0) {
+            return res.status(400).json({ error: 'Ya existe otro alumno registrado con ese nombre.' });
+        }
+
+        const [result] = await db.query(
+            'UPDATE alumnos SET nombre_completo = ? WHERE id_alumno = ?',
+            [nombre_completo.trim(), id]
+        );
+
+        if (result.affectedRows > 0) {
+            res.json({ status: 'ok', message: 'Alumno actualizado correctamente.' });
+        } else {
+            res.status(404).json({ error: 'No se encontró el alumno especificado.' });
+        }
+    } catch (err) {
+        console.error('Error al actualizar alumno:', err);
+        res.status(500).json({ error: 'Error interno al actualizar los datos del alumno.' });
     }
 });
 
@@ -352,18 +607,24 @@ app.get('/api/reportes', async (req, res) => {
 });
 
 // ==========================================
-// 4. RUTAS DE ADMINISTRACIÓN
+// 5. RUTAS DE ADMINISTRACIÓN Y CURSOS
 // ==========================================
 
 app.post('/api/cursos', async (req, res) => {
-    const { nombre_curso, id_docente } = req.body;
+    const { nombre_curso, id_docente, id_periodo } = req.body;
+
+    if (!nombre_curso) {
+        return res.status(400).json({ error: 'El nombre del curso es requerido.' });
+    }
+
     try {
         const [result] = await db.query(
-            'INSERT INTO cursos (nombre_curso, id_docente) VALUES (?, ?)',
-            [nombre_curso, id_docente]
+            'INSERT INTO cursos (nombre_curso, id_docente, id_periodo) VALUES (?, ?, ?)',
+            [nombre_curso.trim(), id_docente || null, id_periodo || null]
         );
         res.status(201).json({ status: 'ok', message: 'Curso creado con éxito.', id_curso: result.insertId });
     } catch (err) {
+        console.error('Error al crear curso:', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -372,7 +633,7 @@ app.post('/api/alumnos', async (req, res) => {
     const { nombre_completo, codigo_estudiante, id_curso } = req.body;
     try {
         const [existentes] = await db.query(
-            'SELECT id_alumno FROM alumnos WHERE LOWER(nombre_completo) = LOWER(?) OR (codigo_estudiante IS NOT NULL AND codigo_estudiante = ?)',
+            'SELECT id_alumno FROM alumnos WHERE LOWER(nombre_completo) = LOWER(?) OR (codigo_estudiante IS NOT NULL AND codigo_estudiante = ? AND codigo_estudiante != "")',
             [nombre_completo.trim(), codigo_estudiante || '']
         );
 
@@ -391,7 +652,7 @@ app.post('/api/alumnos', async (req, res) => {
 });
 
 // ==========================================
-// 5. IMPORTACIÓN MASIVA EXCEL
+// 6. IMPORTACIÓN MASIVA EXCEL
 // ==========================================
 
 app.post('/api/alumnos/upload-excel', upload.single('excelFile'), async (req, res) => {
@@ -484,6 +745,7 @@ app.post('/api/alumnos/upload-excel', upload.single('excelFile'), async (req, re
     }
 });
 
+// Manejador global de errores Multer
 app.use((err, req, res, next) => {
     if (err instanceof multer.MulterError || err.message) {
         return res.status(400).json({ error: err.message });
@@ -491,8 +753,11 @@ app.use((err, req, res, next) => {
     next(err);
 });
 
+// Inicialización del Servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', async () => {
     console.log(`🚀 Servidor listo ejecutándose en el puerto ${PORT}`);
     await inicializarAdmin();
 });
+
+module.exports = app;

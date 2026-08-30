@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reporte de Resultados - Panel del Docente</title>
     
-    <!-- Librerías para PDF con texto real y tablas profesionales -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
@@ -91,7 +90,7 @@
 
         .filters-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 15px;
         }
 
@@ -183,6 +182,12 @@
         <div class="filters-card">
             <div class="filters-grid">
                 <div class="filter-group">
+                    <label for="filterPeriodo">🗓️ Periodo Académico:</label>
+                    <select id="filterPeriodo" onchange="alCambiarPeriodo()">
+                        <option value="">Todos los periodos</option>
+                    </select>
+                </div>
+                <div class="filter-group">
                     <label for="filterAula">🏫 Aula / Curso:</label>
                     <select id="filterAula" onchange="aplicarFiltros()">
                         <option value="">Todas mis aulas</option>
@@ -229,8 +234,9 @@
         const URL_API_MYSQL = 'http://localhost:3000/api';
         let todasLasPartidas = [];
         let docenteSesion = null;
+        let periodosGlobales = [];
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             const sesionData = localStorage.getItem('docenteSesion');
             if (!sesionData) {
                 window.location.href = "login.html";
@@ -239,7 +245,6 @@
 
             docenteSesion = JSON.parse(sesionData);
             
-            // Protección contra acceso no autorizado de Administradores
             if (docenteSesion.rol === 'admin') {
                 window.location.href = "admin_panel.html";
                 return;
@@ -250,8 +255,28 @@
                 txtBienvenida.textContent = `Reportes de las clases de: ${docenteSesion.nombre}`;
             }
 
-            cargarReportes();
+            await cargarPeriodos();
+            await cargarReportes();
         });
+
+        async function cargarPeriodos() {
+            try {
+                const res = await fetch(`${URL_API_MYSQL}/periodos`);
+                if (res.ok) {
+                    periodosGlobales = await res.json();
+                    const selectPeriodo = document.getElementById('filterPeriodo');
+                    selectPeriodo.innerHTML = '<option value="">Todos los periodos</option>';
+                    periodosGlobales.forEach(p => {
+                        const opt = document.createElement('option');
+                        opt.value = p.nombre_periodo;
+                        opt.textContent = `${p.nombre_periodo} (${p.estado || 'Activo'})`;
+                        selectPeriodo.appendChild(opt);
+                    });
+                }
+            } catch (e) {
+                console.error("Error al cargar los periodos:", e);
+            }
+        }
 
         async function cargarReportes() {
             const tablaCuerpo = document.getElementById('tablaCuerpo');
@@ -278,6 +303,7 @@
                                 id_partida: row.id_partida,
                                 fecha: row.fecha_partida ? new Date(row.fecha_partida).toLocaleString('es-ES') : 'Sin fecha',
                                 curso: row.curso || 'Sin curso',
+                                periodo: row.nombre_periodo || row.periodo_academico || '',
                                 alumno: row.alumno || 'Desconocido',
                                 materia: row.nombre_juego ? `${row.materia} (${row.nombre_juego})` : (row.materia || 'General'),
                                 puntuacion: row.puntuacion_total || 0,
@@ -318,9 +344,14 @@
             const selectEstudiante = document.getElementById('filterEstudiante');
             const selectMateria = document.getElementById('filterMateria');
 
-            const aulas = [...new Set(partidas.map(p => p.curso))].sort();
-            const estudiantes = [...new Set(partidas.map(p => p.alumno))].sort();
-            const materias = [...new Set(partidas.map(p => p.materia))].sort();
+            const periodoSel = document.getElementById('filterPeriodo').value;
+            const partidasFiltradasPorPeriodo = periodoSel 
+                ? partidas.filter(p => p.periodo === periodoSel) 
+                : partidas;
+
+            const aulas = [...new Set(partidasFiltradasPorPeriodo.map(p => p.curso))].sort();
+            const estudiantes = [...new Set(partidasFiltradasPorPeriodo.map(p => p.alumno))].sort();
+            const materias = [...new Set(partidasFiltradasPorPeriodo.map(p => p.materia))].sort();
 
             selectAula.innerHTML = '<option value="">Todas mis aulas</option>';
             aulas.forEach(a => selectAula.appendChild(new Option(a, a)));
@@ -332,16 +363,23 @@
             materias.forEach(m => selectMateria.appendChild(new Option(m, m)));
         }
 
+        function alCambiarPeriodo() {
+            poblarSelectsFiltros(todasLasPartidas);
+            aplicarFiltros();
+        }
+
         function aplicarFiltros() {
+            const periodoSel = document.getElementById('filterPeriodo').value;
             const aulaSel = document.getElementById('filterAula').value;
             const estudianteSel = document.getElementById('filterEstudiante').value;
             const materiaSel = document.getElementById('filterMateria').value;
 
             const partidasFiltradas = todasLasPartidas.filter(p => {
+                const coincidePeriodo = !periodoSel || p.periodo === periodoSel;
                 const coincideAula = !aulaSel || p.curso === aulaSel;
                 const coincideEstudiante = !estudianteSel || p.alumno === estudianteSel;
                 const coincideMateria = !materiaSel || p.materia === materiaSel;
-                return coincideAula && coincideEstudiante && coincideMateria;
+                return coincidePeriodo && coincideAula && coincideEstudiante && coincideMateria;
             });
 
             const totalPartidas = partidasFiltradas.length;
@@ -373,7 +411,7 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${p.fecha}</td>
-                    <td><strong>${p.curso}</strong></td>
+                    <td><strong>${p.curso}</strong> ${p.periodo ? `<small style="color:var(--text-light)">(${p.periodo})</small>` : ''}</td>
                     <td>${p.alumno}</td>
                     <td>${p.materia}</td>
                     <td><strong>${p.puntuacion} pts</strong></td>
@@ -390,40 +428,39 @@
             document.getElementById('statErrores').textContent = '0';
         }
 
-        // GENERACIÓN DE PDF PROFESIONAL CON jsPDF + AutoTable
         function descargarPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
+            const periodoSel = document.getElementById('filterPeriodo').value || 'Todos';
             const aulaSel = document.getElementById('filterAula').value || 'Todas';
             const estudianteSel = document.getElementById('filterEstudiante').value || 'Todos';
             const materiaSel = document.getElementById('filterMateria').value || 'Todas';
 
             const partidasFiltradas = todasLasPartidas.filter(p => {
+                const coincidePeriodo = !periodoSel || periodoSel === 'Todos' || p.periodo === periodoSel;
                 const coincideAula = !aulaSel || aulaSel === 'Todas' || p.curso === aulaSel;
                 const coincideEstudiante = !estudianteSel || estudianteSel === 'Todos' || p.alumno === estudianteSel;
                 const coincideMateria = !materiaSel || materiaSel === 'Todas' || p.materia === materiaSel;
-                return coincideAula && coincideEstudiante && coincideMateria;
+                return coincidePeriodo && coincideAula && coincideEstudiante && coincideMateria;
             });
 
-            // Header azul institucional
+            // Header institucional
             doc.setFillColor(79, 70, 229);
             doc.rect(0, 0, 297, 24, 'F');
 
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(16);
             doc.setFont('helvetica', 'bold');
-            doc.text('REPORTE DE RESULTADOS Y RENDIMIENTO', 14, 15);
+            doc.text('REPORTE DE RESULTADOS Y RENDIMIENTO ACADÉMICO', 14, 15);
 
-            // Información del docente y filtros aplicados
             doc.setTextColor(15, 23, 42);
             doc.setFontSize(10);
             doc.setFont('helvetica', 'normal');
             doc.text(`Docente: ${docenteSesion ? docenteSesion.nombre : 'N/A'}`, 14, 32);
             doc.text(`Fecha de emisión: ${new Date().toLocaleDateString('es-ES')}`, 215, 32);
-            doc.text(`Filtros: Aula [${aulaSel}] | Estudiante [${estudianteSel}] | Materia [${materiaSel}]`, 14, 38);
+            doc.text(`Filtros: Periodo [${periodoSel}] | Aula [${aulaSel}] | Estudiante [${estudianteSel}] | Materia [${materiaSel}]`, 14, 38);
 
-            // Resumen de Métricas
             const totalPartidas = partidasFiltradas.length;
             const sumaPuntos = partidasFiltradas.reduce((acc, p) => acc + p.puntuacion, 0);
             const promPuntos = totalPartidas ? Math.round(sumaPuntos / totalPartidas) : 0;
@@ -438,7 +475,6 @@
             doc.text(`Puntaje Promedio: ${promPuntos} pts`, 115, 52);
             doc.text(`Total Errores: ${totalErrores}`, 210, 52);
 
-            // Construir la tabla con texto real
             const filas = partidasFiltradas.map(p => {
                 const detalleErrores = p.errores.length === 0 
                     ? 'Sin errores' 
@@ -446,7 +482,7 @@
 
                 return [
                     p.fecha,
-                    p.curso,
+                    `${p.curso} ${p.periodo ? `(${p.periodo})` : ''}`,
                     p.alumno,
                     p.materia,
                     `${p.puntuacion} pts`,
@@ -472,17 +508,17 @@
                 },
                 columnStyles: {
                     0: { cellWidth: 35 },
-                    1: { cellWidth: 30 },
+                    1: { cellWidth: 35 },
                     2: { cellWidth: 40 },
-                    3: { cellWidth: 45 },
-                    4: { cellWidth: 25 },
-                    5: { cellWidth: 22 },
+                    3: { cellWidth: 40 },
+                    4: { cellWidth: 22 },
+                    5: { cellWidth: 20 },
                     6: { cellWidth: 'auto' }
                 },
                 margin: { left: 14, right: 14 }
             });
 
-            doc.save(`Reporte_Partidas_${aulaSel}_${materiaSel}.pdf`);
+            doc.save(`Reporte_Partidas_${docenteSesion ? docenteSesion.nombre.replace(/\s+/g, '_') : 'Docente'}.pdf`);
         }
     </script>
 </body>

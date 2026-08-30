@@ -10,15 +10,21 @@
 <body class="bg-slate-100 min-h-screen flex">
 
     <!-- Barra Lateral -->
-    <aside class="w-64 bg-slate-900 text-white flex flex-col justify-between p-4">
+    <aside class="w-64 bg-slate-900 text-white flex flex-col justify-between p-4 flex-shrink-0">
         <div>
             <div class="flex items-center gap-3 p-3 border-b border-slate-700">
                 <i class="fa-solid fa-user-shield text-indigo-400 text-2xl"></i>
-                <h2 class="font-bold text-lg">Administrador</h2>
+                <div>
+                    <h2 class="font-bold text-lg leading-tight">Administrador</h2>
+                    <span class="text-xs text-slate-400">Panel de Control</span>
+                </div>
             </div>
             <nav class="mt-6 flex flex-col gap-2">
                 <button id="btn-nav-docentes" onclick="mostrarSeccion('docentes')" class="flex items-center gap-3 p-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 transition w-full text-left">
                     <i class="fa-solid fa-chalkboard-user"></i> Gestionar Docentes
+                </button>
+                <button id="btn-nav-periodos" onclick="mostrarSeccion('periodos')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition w-full text-left">
+                    <i class="fa-solid fa-calendar-days"></i> Periodos Académicos
                 </button>
                 <button id="btn-nav-cursos" onclick="mostrarSeccion('cursos')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition w-full text-left">
                     <i class="fa-solid fa-book-open"></i> Asignación de Cursos
@@ -35,22 +41,33 @@
         
         <!-- SECCIÓN 1: GESTIÓN DE DOCENTES -->
         <section id="sec-docentes" class="block">
-            <div class="flex justify-between items-center mb-6">
-                <h1 class="text-2xl font-bold text-slate-800">Gestión de Docentes</h1>
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-800">Gestión de Docentes</h1>
+                    <p class="text-sm text-slate-500">Administra las cuentas del personal docente e institucional.</p>
+                </div>
                 <button onclick="abrirModalDocente()" class="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-lg shadow transition flex items-center gap-2">
                     <i class="fa-solid fa-user-plus"></i> Agregar Nuevo Docente
                 </button>
             </div>
 
-            <div class="bg-white p-6 rounded-xl shadow-md">
+            <!-- Filtros y Búsqueda -->
+            <div class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-slate-200">
+                <div class="relative w-full sm:w-80">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400"></i>
+                    <input type="text" id="buscar-docente" onkeyup="filtrarDocentes()" placeholder="Buscar por nombre o correo..." class="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200 overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="border-b bg-slate-50 text-slate-600">
+                        <tr class="border-b bg-slate-50 text-slate-600 text-sm">
                             <th class="p-3">ID</th>
                             <th class="p-3">Nombre</th>
                             <th class="p-3">Correo</th>
                             <th class="p-3">Rol</th>
-                            <th class="p-3 text-center">Acción</th>
+                            <th class="p-3 text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="tabla-docentes"></tbody>
@@ -58,15 +75,59 @@
             </div>
         </section>
 
-        <!-- SECCIÓN 2: GESTIÓN Y REASIGNACIÓN DE CURSOS -->
-        <section id="sec-cursos" class="hidden">
-            <h1 class="text-2xl font-bold text-slate-800 mb-6">Asignación y Control de Cursos</h1>
-            <div class="bg-white p-6 rounded-xl shadow-md">
+        <!-- SECCIÓN 2: GESTIÓN DE PERIODOS ACADÉMICOS -->
+        <section id="sec-periodos" class="hidden">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-800">Periodos Académicos</h1>
+                    <p class="text-sm text-slate-500">Define los lectivos activos y pasados de la institución.</p>
+                </div>
+                <button onclick="abrirModalPeriodo()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg shadow transition flex items-center gap-2">
+                    <i class="fa-solid fa-calendar-plus"></i> Crear Nuevo Periodo
+                </button>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200 overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="border-b bg-slate-50 text-slate-600">
+                        <tr class="border-b bg-slate-50 text-slate-600 text-sm">
+                            <th class="p-3">ID</th>
+                            <th class="p-3">Nombre del Periodo</th>
+                            <th class="p-3">Fecha Inicio</th>
+                            <th class="p-3">Fecha Fin</th>
+                            <th class="p-3">Estado</th>
+                            <th class="p-3 text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-periodos"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 3: GESTIÓN Y REASIGNACIÓN DE CURSOS -->
+        <section id="sec-cursos" class="hidden">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-800">Asignación y Control de Cursos</h1>
+                    <p class="text-sm text-slate-500">Asigna o cambia docentes a cargo de los grupos y paralelos.</p>
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-slate-200 flex flex-wrap gap-4 items-center">
+                <label class="text-sm font-semibold text-slate-700">Filtrar por Periodo:</label>
+                <select id="filtro-periodo-curso" onchange="filtrarCursosPorPeriodo()" class="border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                    <option value="todos">Todos los Periodos</option>
+                </select>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200 overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b bg-slate-50 text-slate-600 text-sm">
                             <th class="p-3">ID Curso</th>
                             <th class="p-3">Nombre del Curso</th>
+                            <th class="p-3">Periodo</th>
                             <th class="p-3">Docente Asignado</th>
                             <th class="p-3 text-center">Acciones</th>
                         </tr>
@@ -78,28 +139,47 @@
 
     </main>
 
-    <!-- MODAL REGISTRO DE NUEVO DOCENTE -->
+    <!-- MODAL DE NOTIFICACIÓN ESTILO PRESCOLAR (EL OSITO) -->
+    <div id="modal-notificacion" class="fixed inset-0 bg-slate-900 bg-opacity-60 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 text-center transform transition-all scale-100">
+            <div class="text-5xl mb-3">🧸</div>
+            <h3 id="notif-titulo" class="text-2xl font-extrabold text-slate-800 mb-2">Notificación</h3>
+            <p id="notif-mensaje" class="text-sm text-slate-500 mb-6">Mensaje del sistema.</p>
+            
+            <div id="notif-botones" class="flex justify-center gap-3">
+                <button id="notif-btn-confirmar" onclick="cerrarNotificacion()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg transition">
+                    Aceptar
+                </button>
+                <button id="notif-btn-cancelar" onclick="cerrarNotificacion()" class="hidden w-full py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-2xl shadow transition">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL REGISTRO / EDICIÓN DE DOCENTE -->
     <div id="modal-docente" class="fixed inset-0 bg-slate-900 bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
             <div class="flex justify-between items-center mb-4 border-b pb-2">
-                <h3 class="text-xl font-bold text-slate-800">Registrar Nuevo Docente</h3>
+                <h3 id="modal-docente-titulo" class="text-xl font-bold text-slate-800">Registrar Nuevo Docente</h3>
                 <button onclick="cerrarModalDocente()" class="text-slate-400 hover:text-slate-600">
                     <i class="fa-solid fa-xmark text-xl"></i>
                 </button>
             </div>
             
-            <form id="form-nuevo-docente" onsubmit="guardarNuevoDocente(event)" class="space-y-4">
+            <form id="form-nuevo-docente" onsubmit="guardarDocente(event)" class="space-y-4">
+                <input type="hidden" id="docente-id">
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1">Nombre Completo</label>
-                    <input type="text" id="docente-nombre" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Ej. Prof. Carlos Mendoza">
+                    <input type="text" id="docente-nombre" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Ej. Lcda. María Delgado">
                 </div>
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1">Correo Electrónico</label>
-                    <input type="email" id="docente-correo" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="carlos@escuela.com">
+                    <input type="email" id="docente-correo" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="maria@escuela.com">
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1">Contraseña</label>
-                    <input type="password" id="docente-password" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="••••••••">
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Contraseña <span id="pwd-help" class="text-xs text-slate-400 font-normal">(dejar en blanco si no desea cambiarla)</span></label>
+                    <input type="password" id="docente-password" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="••••••••">
                 </div>
                 
                 <div class="flex justify-end gap-3 pt-4 border-t">
@@ -110,9 +190,52 @@
         </div>
     </div>
 
+    <!-- MODAL REGISTRO / EDICIÓN DE PERIODO ACADÉMICO -->
+    <div id="modal-periodo" class="fixed inset-0 bg-slate-900 bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h3 id="modal-periodo-titulo" class="text-xl font-bold text-slate-800">Registrar Nuevo Periodo</h3>
+                <button onclick="cerrarModalPeriodo()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            
+            <form id="form-nuevo-periodo" onsubmit="guardarPeriodo(event)" class="space-y-4">
+                <input type="hidden" id="periodo-id">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Nombre del Periodo</label>
+                    <input type="text" id="periodo-nombre" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Ej. Lectivo 2026-2027">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Fecha Inicio</label>
+                    <input type="date" id="periodo-inicio" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Fecha Fin</label>
+                    <input type="date" id="periodo-fin" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Estado</label>
+                    <select id="periodo-estado" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="Activo">Activo</option>
+                        <option value="Inactivo">Inactivo</option>
+                    </select>
+                </div>
+                
+                <div class="flex justify-end gap-3 pt-4 border-t">
+                    <button type="button" onclick="cerrarModalPeriodo()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm font-semibold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold">Guardar Periodo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         const API_URL = 'http://localhost:3000/api';
         let listaDocentesGlobal = [];
+        let listaPeriodosGlobal = [];
+        let listaCursosGlobal = [];
+        let fnConfirmacionModal = null;
 
         document.addEventListener('DOMContentLoaded', async () => {
             const docenteStr = localStorage.getItem('docente');
@@ -124,8 +247,9 @@
             try {
                 const usuario = JSON.parse(docenteStr);
                 if (usuario.rol !== 'admin') {
-                    alert('Acceso no autorizado.');
-                    window.location.href = 'login.html';
+                    mostrarAlerta('Acceso Denegado', 'No tienes permisos de administrador.', () => {
+                        window.location.href = 'login.html';
+                    });
                     return;
                 }
             } catch (e) {
@@ -134,112 +258,268 @@
             }
             
             await cargarDocentes();
+            await cargarPeriodos();
             await cargarCursos();
             mostrarSeccion('docentes');
         });
 
+        /* --- CONTROL DEL MODAL PERSONALIZADO (ESTILO DOCENTE) --- */
+        function mostrarAlerta(titulo, mensaje, callback = null) {
+            document.getElementById('notif-titulo').innerText = titulo;
+            document.getElementById('notif-mensaje').innerText = mensaje;
+            
+            const btnConfirmar = document.getElementById('notif-btn-confirmar');
+            const btnCancelar = document.getElementById('notif-btn-cancelar');
+            
+            btnConfirmar.innerText = 'Aceptar';
+            btnCancelar.classList.add('hidden');
+
+            fnConfirmacionModal = callback;
+            document.getElementById('modal-notificacion').classList.remove('hidden');
+        }
+
+        function mostrarConfirmacion(titulo, mensaje, onConfirm) {
+            document.getElementById('notif-titulo').innerText = titulo;
+            document.getElementById('notif-mensaje').innerText = mensaje;
+
+            const btnConfirmar = document.getElementById('notif-btn-confirmar');
+            const btnCancelar = document.getElementById('notif-btn-cancelar');
+
+            btnConfirmar.innerText = 'Sí, continuar';
+            btnCancelar.classList.remove('hidden');
+
+            fnConfirmacionModal = onConfirm;
+            document.getElementById('modal-notificacion').classList.remove('hidden');
+        }
+
+        function cerrarNotificacion() {
+            document.getElementById('modal-notificacion').classList.add('hidden');
+            if (fnConfirmacionModal) {
+                const fn = fnConfirmacionModal;
+                fnConfirmacionModal = null;
+                fn();
+            }
+        }
+
         function mostrarSeccion(seccion) {
             const secDocentes = document.getElementById('sec-docentes');
+            const secPeriodos = document.getElementById('sec-periodos');
             const secCursos = document.getElementById('sec-cursos');
+            
             const btnDocentes = document.getElementById('btn-nav-docentes');
+            const btnPeriodos = document.getElementById('btn-nav-periodos');
             const btnCursos = document.getElementById('btn-nav-cursos');
+
+            const inactiveClass = "flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition w-full text-left";
+            const activeClass = "flex items-center gap-3 p-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 transition w-full text-left";
+
+            secDocentes.classList.add('hidden');
+            secPeriodos.classList.add('hidden');
+            secCursos.classList.add('hidden');
+
+            btnDocentes.className = inactiveClass;
+            btnPeriodos.className = inactiveClass;
+            btnCursos.className = inactiveClass;
 
             if (seccion === 'docentes') {
                 secDocentes.classList.remove('hidden');
-                secCursos.classList.add('hidden');
-                btnDocentes.className = "flex items-center gap-3 p-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 transition w-full text-left";
-                btnCursos.className = "flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition w-full text-left";
-            } else {
-                secDocentes.classList.add('hidden');
+                btnDocentes.className = activeClass;
+            } else if (seccion === 'periodos') {
+                secPeriodos.classList.remove('hidden');
+                btnPeriodos.className = activeClass;
+            } else if (seccion === 'cursos') {
                 secCursos.classList.remove('hidden');
-                btnCursos.className = "flex items-center gap-3 p-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 transition w-full text-left";
-                btnDocentes.className = "flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition w-full text-left";
+                btnCursos.className = activeClass;
             }
         }
 
+        /* --- GESTIÓN DE DOCENTES --- */
         async function cargarDocentes() {
-            const tbody = document.getElementById('tabla-docentes');
             try {
                 const res = await fetch(`${API_URL}/admin/docentes`);
                 if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
-                
                 listaDocentesGlobal = await res.json();
-                
-                if (!Array.isArray(listaDocentesGlobal) || listaDocentesGlobal.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500">No hay docentes registrados.</td></tr>';
-                    return;
-                }
-
-                tbody.innerHTML = listaDocentesGlobal.map(d => `
-                    <tr class="border-b hover:bg-slate-50 text-slate-700">
-                        <td class="p-3 font-mono">${d.id_docente}</td>
-                        <td class="p-3 font-semibold">${d.nombre || ''}</td>
-                        <td class="p-3 text-slate-600">${d.correo || ''}</td>
-                        <td class="p-3">
-                            <span class="px-2 py-1 rounded text-xs font-bold ${d.rol === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}">
-                                ${(d.rol || 'docente').toUpperCase()}
-                            </span>
-                        </td>
-                        <td class="p-3 text-center">
-                            ${d.rol === 'admin' 
-                                ? '<span class="text-xs text-slate-400 italic">Protegido</span>' 
-                                : `<button onclick="eliminarDocente(${d.id_docente})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition">Eliminar</button>`
-                            }
-                        </td>
-                    </tr>
-                `).join('');
+                renderizarDocentes(listaDocentesGlobal);
             } catch (err) {
                 console.error("Error al cargar docentes:", err);
-                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error al conectar con la API (${err.message})</td></tr>`;
+                document.getElementById('tabla-docentes').innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error al conectar con la API (${err.message})</td></tr>`;
             }
         }
 
+        function renderizarDocentes(docentes) {
+            const tbody = document.getElementById('tabla-docentes');
+            if (!Array.isArray(docentes) || docentes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500">No hay docentes registrados.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = docentes.map(d => `
+                <tr class="border-b hover:bg-slate-50 text-slate-700">
+                    <td class="p-3 font-mono">${d.id_docente}</td>
+                    <td class="p-3 font-semibold">${d.nombre || ''}</td>
+                    <td class="p-3 text-slate-600">${d.correo || ''}</td>
+                    <td class="p-3">
+                        <span class="px-2 py-1 rounded text-xs font-bold ${d.rol === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}">
+                            ${(d.rol || 'docente').toUpperCase()}
+                        </span>
+                    </td>
+                    <td class="p-3 text-center flex justify-center gap-2">
+                        ${d.rol === 'admin' 
+                            ? '<span class="text-xs text-slate-400 italic">Protegido</span>' 
+                            : `
+                                <button onclick="editarDocente(${d.id_docente})" class="bg-amber-500 hover:bg-amber-600 text-white px-2.5 py-1 rounded text-sm transition flex items-center gap-1" title="Editar Docente">
+                                    <i class="fa-solid fa-pen-to-square"></i> Editar
+                                </button>
+                                <button onclick="eliminarDocente(${d.id_docente})" class="bg-red-500 hover:bg-red-600 text-white px-2.5 py-1 rounded text-sm transition flex items-center gap-1" title="Eliminar Docente">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            `
+                        }
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filtrarDocentes() {
+            const query = document.getElementById('buscar-docente').value.toLowerCase();
+            const filtrados = listaDocentesGlobal.filter(d => 
+                (d.nombre && d.nombre.toLowerCase().includes(query)) ||
+                (d.correo && d.correo.toLowerCase().includes(query))
+            );
+            renderizarDocentes(filtrados);
+        }
+
+        /* --- GESTIÓN DE PERIODOS ACADÉMICOS --- */
+        async function cargarPeriodos() {
+            try {
+                const res = await fetch(`${API_URL}/periodos`);
+                if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+                listaPeriodosGlobal = await res.json();
+                renderizarPeriodos(listaPeriodosGlobal);
+                poblarSelectPeriodosFiltro();
+            } catch (err) {
+                console.error("Error al cargar periodos:", err);
+                document.getElementById('tabla-periodos').innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error al conectar con la API (${err.message})</td></tr>`;
+            }
+        }
+
+        function renderizarPeriodos(periodos) {
+            const tbody = document.getElementById('tabla-periodos');
+            if (!Array.isArray(periodos) || periodos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-500">No hay periodos académicos registrados.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = periodos.map(p => `
+                <tr class="border-b hover:bg-slate-50 text-slate-700">
+                    <td class="p-3 font-mono">${p.id_periodo}</td>
+                    <td class="p-3 font-semibold">${p.nombre_periodo}</td>
+                    <td class="p-3">${p.fecha_inicio ? p.fecha_inicio.split('T')[0] : 'N/A'}</td>
+                    <td class="p-3">${p.fecha_fin ? p.fecha_fin.split('T')[0] : 'N/A'}</td>
+                    <td class="p-3">
+                        <span class="px-2 py-1 rounded text-xs font-bold ${p.estado === 'Activo' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}">
+                            ${(p.estado || 'Inactivo').toUpperCase()}
+                        </span>
+                    </td>
+                    <td class="p-3 text-center flex justify-center gap-2">
+                        <button onclick="editarPeriodo(${p.id_periodo})" class="bg-amber-500 hover:bg-amber-600 text-white px-2.5 py-1 rounded text-sm transition flex items-center gap-1" title="Editar Periodo">
+                            <i class="fa-solid fa-pen-to-square"></i> Editar
+                        </button>
+                        <button onclick="eliminarPeriodo(${p.id_periodo})" class="bg-red-500 hover:bg-red-600 text-white px-2.5 py-1 rounded text-sm transition flex items-center gap-1" title="Eliminar Periodo">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function poblarSelectPeriodosFiltro() {
+            const select = document.getElementById('filtro-periodo-curso');
+            select.innerHTML = '<option value="todos">Todos los Periodos</option>' + 
+                listaPeriodosGlobal.map(p => `<option value="${p.id_periodo}">${p.nombre_periodo}</option>`).join('');
+        }
+
+        /* --- GESTIÓN DE CURSOS --- */
         async function cargarCursos() {
-            const tbody = document.getElementById('tabla-cursos');
             try {
                 const res = await fetch(`${API_URL}/admin/cursos`);
                 if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
-                
-                const cursos = await res.json();
-
-                if (!Array.isArray(cursos) || cursos.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">No hay cursos registrados en la base de datos.</td></tr>';
-                    return;
-                }
-
-                tbody.innerHTML = cursos.map(c => `
-                    <tr class="border-b hover:bg-slate-50 text-slate-700">
-                        <td class="p-3 font-mono">${c.id_curso}</td>
-                        <td class="p-3 font-semibold">${c.nombre_curso}</td>
-                        <td class="p-3">
-                            <select id="select-docente-${c.id_curso}" class="border rounded p-2 text-sm bg-white border-slate-300 w-full max-w-xs">
-                                <option value="">-- Sin docente --</option>
-                                ${listaDocentesGlobal.map(d => `
-                                    <option value="${d.id_docente}" ${d.id_docente === c.id_docente ? 'selected' : ''}>
-                                        ${d.nombre} (${d.correo})
-                                    </option>
-                                `).join('')}
-                            </select>
-                        </td>
-                        <td class="p-3 text-center flex justify-center gap-2">
-                            <button onclick="reasignarDocente(${c.id_curso})" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-sm transition flex items-center gap-1">
-                                <i class="fa-solid fa-floppy-disk"></i> Guardar
-                            </button>
-                            <button onclick="eliminarCurso(${c.id_curso})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition flex items-center gap-1">
-                                <i class="fa-solid fa-trash"></i> Eliminar
-                            </button>
-                        </td>
-                    </tr>
-                `).join('');
+                listaCursosGlobal = await res.json();
+                renderizarCursos(listaCursosGlobal);
             } catch (err) {
                 console.error("Error al cargar cursos:", err);
-                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">Error al conectar con la API (${err.message})</td></tr>`;
+                document.getElementById('tabla-cursos').innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error al conectar con la API (${err.message})</td></tr>`;
             }
         }
 
-        // FUNCIONES MODAL DOCENTES
+        function renderizarCursos(cursos) {
+            const tbody = document.getElementById('tabla-cursos');
+            if (!Array.isArray(cursos) || cursos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500">No hay cursos registrados.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = cursos.map(c => `
+                <tr class="border-b hover:bg-slate-50 text-slate-700">
+                    <td class="p-3 font-mono">${c.id_curso}</td>
+                    <td class="p-3 font-semibold">${c.nombre_curso}</td>
+                    <td class="p-3">
+                        <span class="px-2 py-1 rounded text-xs font-semibold bg-slate-200 text-slate-700">
+                            ${c.nombre_periodo || 'Sin Periodo'}
+                        </span>
+                    </td>
+                    <td class="p-3">
+                        <select id="select-docente-${c.id_curso}" class="border rounded p-2 text-sm bg-white border-slate-300 w-full max-w-xs">
+                            <option value="">-- Sin docente --</option>
+                            ${listaDocentesGlobal.map(d => `
+                                <option value="${d.id_docente}" ${d.id_docente === c.id_docente ? 'selected' : ''}>
+                                    ${d.nombre} (${d.correo})
+                                </option>
+                            `).join('')}
+                        </select>
+                    </td>
+                    <td class="p-3 text-center flex justify-center gap-2">
+                        <button onclick="reasignarDocente(${c.id_curso})" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-sm transition flex items-center gap-1">
+                            <i class="fa-solid fa-floppy-disk"></i> Guardar
+                        </button>
+                        <button onclick="eliminarCurso(${c.id_curso})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition flex items-center gap-1">
+                            <i class="fa-solid fa-trash"></i> Eliminar
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filtrarCursosPorPeriodo() {
+            const idPeriodo = document.getElementById('filtro-periodo-curso').value;
+            if (idPeriodo === 'todos') {
+                renderizarCursos(listaCursosGlobal);
+            } else {
+                const filtrados = listaCursosGlobal.filter(c => c.id_periodo == idPeriodo);
+                renderizarCursos(filtrados);
+            }
+        }
+
+        /* --- MODALES Y ACCIONES GUARDAR/EDITAR --- */
         function abrirModalDocente() {
             document.getElementById('form-nuevo-docente').reset();
+            document.getElementById('docente-id').value = '';
+            document.getElementById('modal-docente-titulo').innerText = 'Registrar Nuevo Docente';
+            document.getElementById('docente-password').required = true;
+            document.getElementById('modal-docente').classList.remove('hidden');
+        }
+
+        function editarDocente(id) {
+            const docente = listaDocentesGlobal.find(d => d.id_docente === id);
+            if (!docente) return;
+
+            document.getElementById('docente-id').value = docente.id_docente;
+            document.getElementById('docente-nombre').value = docente.nombre;
+            document.getElementById('docente-correo').value = docente.correo;
+            document.getElementById('docente-password').value = '';
+            document.getElementById('docente-password').required = false;
+
+            document.getElementById('modal-docente-titulo').innerText = 'Editar Docente';
             document.getElementById('modal-docente').classList.remove('hidden');
         }
 
@@ -247,41 +527,100 @@
             document.getElementById('modal-docente').classList.add('hidden');
         }
 
-        async function guardarNuevoDocente(event) {
+        async function guardarDocente(event) {
             event.preventDefault();
-
+            const id = document.getElementById('docente-id').value;
             const nombre = document.getElementById('docente-nombre').value.trim();
             const correo = document.getElementById('docente-correo').value.trim();
             const password = document.getElementById('docente-password').value;
 
+            const url = id ? `${API_URL}/admin/docentes/${id}` : `${API_URL}/docentes`;
+            const method = id ? 'PUT' : 'POST';
+
             try {
-                const res = await fetch(`${API_URL}/docentes`, {
-                    method: 'POST',
+                const res = await fetch(url, {
+                    method: method,
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nombre, correo, password })
+                    body: JSON.stringify({ nombre, correo, password: password || undefined })
                 });
 
                 const data = await res.json();
-
                 if (res.ok) {
-                    alert('Docente registrado exitosamente.');
                     cerrarModalDocente();
+                    mostrarAlerta('¡Registro Exitoso!', id ? 'Docente actualizado correctamente.' : 'Docente registrado correctamente.');
                     await cargarDocentes();
-                    await cargarCursos(); // Actualiza la lista desplegable en la pestaña de cursos
+                    await cargarCursos();
                 } else {
-                    alert(data.error || 'Ocurrió un error al registrar el docente.');
+                    mostrarAlerta('Error', data.error || 'Ocurrió un error al procesar la solicitud.');
                 }
             } catch (err) {
-                alert('Error de conexión con el servidor.');
+                mostrarAlerta('Error de Conexión', 'No se pudo conectar con el servidor.');
             }
         }
 
+        function abrirModalPeriodo() {
+            document.getElementById('form-nuevo-periodo').reset();
+            document.getElementById('periodo-id').value = '';
+            document.getElementById('modal-periodo-titulo').innerText = 'Registrar Nuevo Periodo';
+            document.getElementById('modal-periodo').classList.remove('hidden');
+        }
+
+        function editarPeriodo(id) {
+            const periodo = listaPeriodosGlobal.find(p => p.id_periodo === id);
+            if (!periodo) return;
+
+            document.getElementById('periodo-id').value = periodo.id_periodo;
+            document.getElementById('periodo-nombre').value = periodo.nombre_periodo;
+            document.getElementById('periodo-inicio').value = periodo.fecha_inicio ? periodo.fecha_inicio.split('T')[0] : '';
+            document.getElementById('periodo-fin').value = periodo.fecha_fin ? periodo.fecha_fin.split('T')[0] : '';
+            document.getElementById('periodo-estado').value = periodo.estado || 'Activo';
+
+            document.getElementById('modal-periodo-titulo').innerText = 'Editar Periodo Académico';
+            document.getElementById('modal-periodo').classList.remove('hidden');
+        }
+
+        function cerrarModalPeriodo() {
+            document.getElementById('modal-periodo').classList.add('hidden');
+        }
+
+        async function guardarPeriodo(event) {
+            event.preventDefault();
+            const id = document.getElementById('periodo-id').value;
+            const nombre_periodo = document.getElementById('periodo-nombre').value.trim();
+            const fecha_inicio = document.getElementById('periodo-inicio').value;
+            const fecha_fin = document.getElementById('periodo-fin').value;
+            const estado = document.getElementById('periodo-estado').value;
+
+            const url = id ? `${API_URL}/periodos/${id}` : `${API_URL}/periodos`;
+            const method = id ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre_periodo, fecha_inicio, fecha_fin, estado })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    cerrarModalPeriodo();
+                    mostrarAlerta('¡Registro Exitoso!', id ? 'Periodo actualizado correctamente.' : 'Periodo académico registrado correctamente.');
+                    await cargarPeriodos();
+                } else {
+                    mostrarAlerta('Error', data.error || 'Ocurrió un error al procesar la solicitud.');
+                }
+            } catch (err) {
+                mostrarAlerta('Error de Conexión', 'No se pudo conectar con el servidor.');
+            }
+        }
+
+        /* --- ACCIONES ELIMINAR / REASIGNAR --- */
         async function reasignarDocente(idCurso) {
             const select = document.getElementById(`select-docente-${idCurso}`);
             const nuevoIdDocente = select ? select.value : null;
 
             if (!nuevoIdDocente) {
-                alert('Por favor, selecciona un docente válido.');
+                mostrarAlerta('Atención', 'Por favor, selecciona un docente válido.');
                 return;
             }
 
@@ -292,42 +631,52 @@
                     body: JSON.stringify({ id_docente: nuevoIdDocente })
                 });
                 const data = await res.json();
-                alert(data.message || data.error);
+                mostrarAlerta('Proceso Exitoso', data.message || 'Docente reasignado al curso.');
                 cargarCursos();
             } catch (err) {
-                alert('Error de conexión al reasignar el docente.');
+                mostrarAlerta('Error', 'Error de conexión al reasignar el docente.');
             }
         }
 
-        async function eliminarDocente(id) {
-            if (!confirm('¿Estás seguro de eliminar este docente?')) return;
-            try {
-                const res = await fetch(`${API_URL}/admin/docentes/${id}`, { method: 'DELETE' });
-                const data = await res.json();
-                alert(data.message || data.error);
-                await cargarDocentes();
-                await cargarCursos();
-            } catch (err) {
-                alert('Error al intentar eliminar el docente.');
-            }
-        }
-
-        async function eliminarCurso(idCurso) {
-            if (!confirm('⚠️ ATENCIÓN: ¿Estás seguro de eliminar este curso?\n\nEsta acción eliminará el curso y todos sus alumnos y partidas asociadas de forma permanente.')) return;
-            try {
-                const res = await fetch(`${API_URL}/admin/cursos/${idCurso}`, { method: 'DELETE' });
-                const data = await res.json();
-                
-                if (res.ok) {
-                    alert(data.message || 'Curso eliminado correctamente.');
-                } else {
-                    alert(data.error || 'No se pudo eliminar el curso.');
+        function eliminarDocente(id) {
+            mostrarConfirmacion('¿Eliminar Docente?', 'Esta acción no se puede deshacer.', async () => {
+                try {
+                    const res = await fetch(`${API_URL}/admin/docentes/${id}`, { method: 'DELETE' });
+                    const data = await res.json();
+                    mostrarAlerta('Resultado', data.message || data.error);
+                    await cargarDocentes();
+                    await cargarCursos();
+                } catch (err) {
+                    mostrarAlerta('Error', 'Error al intentar eliminar el docente.');
                 }
-                
-                await cargarCursos();
-            } catch (err) {
-                alert('Error al intentar conectar con el servidor para eliminar el curso.');
-            }
+            });
+        }
+
+        function eliminarPeriodo(id) {
+            mostrarConfirmacion('¿Eliminar Periodo?', 'Se borrará el periodo seleccionado.', async () => {
+                try {
+                    const res = await fetch(`${API_URL}/periodos/${id}`, { method: 'DELETE' });
+                    const data = await res.json();
+                    mostrarAlerta('Resultado', data.message || data.error);
+                    await cargarPeriodos();
+                    await cargarCursos();
+                } catch (err) {
+                    mostrarAlerta('Error', 'Error al intentar eliminar el periodo.');
+                }
+            });
+        }
+
+        function eliminarCurso(idCurso) {
+            mostrarConfirmacion('¿Eliminar Curso?', 'Esta acción eliminará el curso y todos sus registros asociados.', async () => {
+                try {
+                    const res = await fetch(`${API_URL}/admin/cursos/${idCurso}`, { method: 'DELETE' });
+                    const data = await res.json();
+                    mostrarAlerta('Resultado', data.message || data.error || 'Curso eliminado correctamente.');
+                    await cargarCursos();
+                } catch (err) {
+                    mostrarAlerta('Error', 'Error al intentar conectar con el servidor.');
+                }
+            });
         }
 
         function cerrarSesion() {

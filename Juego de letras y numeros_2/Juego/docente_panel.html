@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Docente - Gestión Académica</title>
+    <title>Panel de Docente - Educación Inicial & Preescolar</title>
     <style>
     :root {
         --primary: #4f46e5;
@@ -18,6 +18,8 @@
         --border: #e2e8f0;
         --success: #16a34a;
         --error: #dc2626;
+        --warning: #f59e0b;
+        --warning-hover: #d97706;
         --border-radius: 16px;
         --box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
     }
@@ -180,10 +182,10 @@
         background: var(--card-bg);
         border: 1px solid var(--border);
         border-radius: var(--border-radius);
-        padding: 40px;
+        padding: 30px 40px;
         box-shadow: var(--box-shadow);
         width: 100%;
-        margin: 0 auto;
+        margin: 0 auto 30px auto;
     }
 
     .card h2 {
@@ -193,6 +195,35 @@
         margin-bottom: 24px;
         padding-bottom: 12px;
         border-bottom: 2px solid var(--border);
+    }
+
+    /* Sub-pestañas internas para conmutar método de registro */
+    .subtabs-toggle {
+        display: flex;
+        background: #e2e8f0;
+        border-radius: 10px;
+        padding: 4px;
+        margin-bottom: 24px;
+        gap: 4px;
+    }
+
+    .subtab-btn {
+        flex: 1;
+        padding: 10px 16px;
+        border: none;
+        border-radius: 8px;
+        background: transparent;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .subtab-btn.active {
+        background: #ffffff;
+        color: var(--primary);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
     }
 
     .form-group { margin-bottom: 22px; }
@@ -223,21 +254,41 @@
         box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
     }
 
-    button.btn-submit {
+    .button-group-row {
+        display: flex;
+        gap: 12px;
         margin-top: 12px;
-        width: 100%;
-        padding: 16px;
+    }
+
+    button.btn-submit {
+        flex: 1;
+        padding: 14px;
         background-color: var(--primary);
         color: white;
         border: none;
         border-radius: 10px;
         font-weight: 600;
-        font-size: 1.05rem;
+        font-size: 0.95rem;
         cursor: pointer;
         transition: background 0.2s;
     }
 
     button.btn-submit:hover { background-color: var(--primary-hover); }
+
+    button.btn-secondary-action {
+        flex: 1;
+        padding: 14px;
+        background-color: #0e7490;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    button.btn-secondary-action:hover { background-color: #155e75; }
 
     .table-container {
         width: 100%;
@@ -263,6 +314,22 @@
         text-transform: uppercase;
     }
 
+    .actions-cell {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-edit {
+        background: var(--warning);
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.85rem;
+    }
+
     .btn-delete {
         background: #ef4444;
         color: white;
@@ -271,27 +338,49 @@
         border-radius: 6px;
         cursor: pointer;
         font-size: 0.85rem;
-        transition: background 0.2s;
     }
 
-    .btn-delete:hover { background: #dc2626; }
-
-    .alert {
-        margin-top: 16px;
-        padding: 12px;
-        border-radius: 8px;
-        font-size: 0.9rem;
+    .modal-overlay {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(4px);
         display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .modal-card {
+        background: var(--card-bg);
+        border-radius: var(--border-radius);
+        padding: 30px;
+        width: 90%;
+        max-width: 450px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
         text-align: center;
     }
-    .alert-success { background: #dcfce7; color: var(--success); }
-    .alert-error { background: #fee2e2; color: var(--error); }
+
+    .notification-icon { font-size: 3rem; margin-bottom: 12px; }
+    .notification-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 10px; }
+    .notification-message { font-size: 0.95rem; color: var(--text-muted); margin-bottom: 24px; }
+    .modal-actions { display: flex; gap: 12px; justify-content: center; }
+
+    .btn-cancel {
+        background: #94a3b8;
+        color: white;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+    }
 
     @media (max-width: 900px) {
         body { flex-direction: column; }
         .sidebar { width: 100%; }
         .main-content { padding: 20px; }
-        .tab-content { max-width: 100%; }
+        .button-group-row { flex-direction: column; }
     }
     </style>
 </head>
@@ -300,20 +389,19 @@
     <aside class="sidebar">
         <div>
             <div class="sidebar-brand">
-                <span style="font-size: 22px;">👨‍🏫</span>
-                <h2 id="sidebarTitle">Panel Docente</h2>
+                <span style="font-size: 22px;">🧸</span>
+                <h2 id="sidebarTitle">Panel Preescolar</h2>
             </div>
 
             <button class="dropdown-btn" onclick="toggleDropdown()">
-                <span>🏫 Gestión Escolar</span>
+                <span>🏫 Gestión de Aulas</span>
                 <span id="arrowIcon">▼</span>
             </button>
             
             <div id="gestionSubmenu" class="dropdown-container">
-                <button class="menu-btn active" id="btnTabCurso" onclick="switchTab('tabCurso', this)">🏫 1. Cursos</button>
-                <button class="menu-btn" onclick="switchTab('tabAlumno', this)">🎓 2. Registrar Alumno</button>
-                <button class="menu-btn" onclick="switchTab('tabExcel', this)">📊 3. Carga Masiva (Excel)</button>
-                <button class="menu-btn" onclick="switchTab('tabLista', this)">👨‍🎓 4. Listado de Alumnos</button>
+                <button class="menu-btn active" id="btnTabCurso" onclick="switchTab('tabCurso', this)">🏫 1. Mis Cursos / Aulas</button>
+                <button class="menu-btn" id="btnTabAlumno" onclick="switchTab('tabAlumno', this)">🎓 2. Registrar Alumno</button>
+                <button class="menu-btn" onclick="switchTab('tabLista', this)">👨‍🎓 3. Nómina de Niños/as</button>
             </div>
         </div>
 
@@ -325,71 +413,99 @@
 
     <main class="main-content">
         <div class="header">
-            <h1 id="panelTitle">Registrar Curso</h1>
-            <p style="color: var(--text-muted); font-size: 0.9rem;">Administración de tus cursos y matrículas de estudiantes.</p>
+            <h1 id="panelTitle">Registrar Curso / Aula</h1>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Gestión de paralelos y matrículas de Educación Inicial y Parvularia.</p>
         </div>
 
-        <!-- PESTAÑA 1: REGISTRO DE CURSO -->
+        <!-- PESTAÑA 1: REGISTRO Y LISTADO DE CURSOS -->
         <div id="tabCurso" class="tab-content active">
             <div class="card">
-                <h2>Registrar Nuevo Curso</h2>
-                <form onsubmit="guardarCurso(event)">
+                <h2>Crear Nuevo Curso o Grupo</h2>
+                <form id="formCrearCurso">
                     <div class="form-group">
-                        <label>Docente Encargado</label>
+                        <label>Docente Encargado/a</label>
                         <input type="text" id="docenteAutenticadoNombre" disabled placeholder="Cargando sesión...">
                     </div>
                     <div class="form-group">
-                        <label>Nombre del Curso</label>
-                        <input type="text" id="cursoNombre" required placeholder="Ej. 1ro Básico 'A'">
+                        <label>Nombre del Curso / Nivel</label>
+                        <input type="text" id="cursoNombre" required placeholder="Ej. Inicial 2 - Grupo A, Párvulos (3 años), Pre-Kínder B">
                     </div>
-                    <button type="submit" class="btn-submit">Guardar Curso</button>
-                    <div id="msgCurso" class="alert"></div>
+                    <div class="form-group">
+                        <label>Periodo Lectivo</label>
+                        <select id="selectPeriodos" required>
+                            <option value="">Cargando periodos...</option>
+                        </select>
+                    </div>
+
+                    <div class="button-group-row">
+                        <button type="button" onclick="guardarCurso(false)" class="btn-submit">💾 Guardar Curso</button>
+                        <button type="button" onclick="guardarCurso(true)" class="btn-secondary-action">🚀 Guardar y Matricular Alumnos</button>
+                    </div>
                 </form>
+            </div>
+
+            <div class="card">
+                <h2>Mis Cursos Asignados y Creados</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nombre del Curso / Aula</th>
+                                <th style="text-align: center;">Periodo Lectivo</th>
+                                <th style="text-align: center;">Acción Rápida</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaMisCursosBody">
+                            <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Cargando tus cursos...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
-        <!-- PESTAÑA 2: REGISTRO DE ALUMNO -->
+        <!-- PESTAÑA 2: REGISTRO UNIFICADO DE ALUMNOS (INDIVIDUAL Y EXCEL) -->
         <div id="tabAlumno" class="tab-content">
             <div class="card">
-                <h2>Registrar Alumno Individual</h2>
-                <form onsubmit="guardarAlumno(event)">
+                <h2>Registrar Estudiante(s)</h2>
+
+                <!-- Conmutador / Subtabs de Selección de Método -->
+                <div class="subtabs-toggle">
+                    <button class="subtab-btn active" id="subtabIndivBtn" onclick="toggleModoRegistro('individual')">👤 Registro Individual</button>
+                    <button class="subtab-btn" id="subtabExcelBtn" onclick="toggleModoRegistro('excel')">📁 Carga Masiva (Excel)</button>
+                </div>
+
+                <!-- SUB-FORMULARIO 1: INDIVIDUAL -->
+                <form id="formRegistroIndividual" onsubmit="guardarAlumno(event)">
                     <div class="form-group">
-                        <label>Curso Asignado</label>
+                        <label>Curso / Paralelo Asignado</label>
                         <select id="selectCursos" required><option value="">Cargando cursos...</option></select>
                     </div>
                     <div class="form-group">
-                        <label>Nombre Completo del Estudiante</label>
-                        <input type="text" id="alumnoNombre" required placeholder="Ej. Juan Pérez">
+                        <label>Nombre Completo del Niño / Niña</label>
+                        <input type="text" id="alumnoNombre" required placeholder="Ej. Mateo Sebastián Morales">
                     </div>
-                    <button type="submit" class="btn-submit">Guardar Alumno</button>
-                    <div id="msgAlumno" class="alert"></div>
+                    <button type="submit" class="btn-submit">Matricular Alumno</button>
                 </form>
-            </div>
-        </div>
 
-        <!-- PESTAÑA 3: CARGA EXCEL -->
-        <div id="tabExcel" class="tab-content">
-            <div class="card">
-                <h2>Carga Masiva de Alumnos desde Excel</h2>
-                <form onsubmit="importarExcel(event)">
+                <!-- SUB-FORMULARIO 2: EXCEL -->
+                <form id="formRegistroExcel" onsubmit="importarExcel(event)" style="display: none;">
                     <div class="form-group">
-                        <label>Curso de Destino</label>
+                        <label>Curso / Paralelo de Destino</label>
                         <select id="selectCursoExcel" required><option value="">Cargando cursos...</option></select>
                     </div>
                     <div class="form-group">
                         <label>Archivo Excel (.xlsx / .xls)</label>
                         <input type="file" id="archivoExcel" accept=".xlsx, .xls" required>
                     </div>
-                    <button type="submit" class="btn-submit">Cargar e Importar Alumnos</button>
-                    <div id="msgExcel" class="alert"></div>
+                    <button type="submit" class="btn-submit" style="background-color: #0284c7;">📊 Cargar e Importar Excel</button>
                 </form>
             </div>
         </div>
 
-        <!-- PESTAÑA 4: LISTADO Y ELIMINACIÓN DE ALUMNOS -->
+        <!-- PESTAÑA 3: LISTADO Y NÓMINA DE ALUMNOS -->
         <div id="tabLista" class="tab-content">
             <div class="card">
-                <h2>Listado de Alumnos por Curso</h2>
+                <h2>Nómina de Estudiantes por Curso</h2>
                 <div class="form-group">
                     <label>Seleccionar Curso</label>
                     <select id="selectCursoFiltro" onchange="cargarAlumnosPorCurso()"><option value="">-- Seleccionar Curso --</option></select>
@@ -400,22 +516,63 @@
                         <thead>
                             <tr>
                                 <th>Nombre Completo</th>
-                                <th style="text-align: center; width: 120px;">Acción</th>
+                                <th style="text-align: center;">Periodo Académico</th>
+                                <th style="text-align: center; width: 180px;">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="tablaAlumnosBody">
-                            <tr><td colspan="2" style="text-align: center; color: var(--text-muted);">Seleccione un curso para ver sus estudiantes.</td></tr>
+                            <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Seleccione un curso para ver sus estudiantes.</td></tr>
                         </tbody>
                     </table>
                 </div>
-                <div id="msgLista" class="alert"></div>
             </div>
         </div>
     </main>
 
+    <!-- MODALES -->
+    <div id="modalEditarAlumno" class="modal-overlay">
+        <div class="modal-card" style="text-align: left;">
+            <h2>Modificar Estudiante</h2>
+            <form onsubmit="actualizarAlumno(event)">
+                <input type="hidden" id="editIdAlumno">
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>Nombre Completo</label>
+                    <input type="text" id="editNombreAlumno" required>
+                </div>
+                <div class="modal-actions" style="justify-content: flex-end;">
+                    <button type="button" onclick="cerrarModalEditar()" class="btn-cancel">Cancelar</button>
+                    <button type="submit" class="btn-submit" style="margin-top: 0; width: auto; padding: 10px 20px;">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalConfirmarEliminar" class="modal-overlay">
+        <div class="modal-card">
+            <div class="notification-icon">⚠️</div>
+            <h3 class="notification-title" style="color: var(--error);">Confirmar Retiro</h3>
+            <p id="confirmMessage" class="notification-message">¿Está seguro de retirar la matrícula del estudiante?</p>
+            <div class="modal-actions">
+                <button onclick="cerrarModalConfirmar()" class="btn-cancel">Cancelar</button>
+                <button id="btnConfirmarDelete" class="btn-delete" style="padding: 10px 20px; font-size: 0.95rem; font-weight: 600;">Sí, Retirar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalNotificacion" class="modal-overlay">
+        <div class="modal-card">
+            <div id="notifIcon" class="notification-icon">🧸</div>
+            <h3 id="notifTitle" class="notification-title">Gestión Académica</h3>
+            <p id="notifMessage" class="notification-message">Operación realizada con éxito.</p>
+            <button onclick="cerrarNotificacion()" class="btn-submit" style="margin-top: 0; padding: 10px 24px;">Aceptar</button>
+        </div>
+    </div>
+
     <script>
         const API = "http://localhost:3000/api";
         let docenteSesion = null;
+        let alumnosCargados = {}; 
+        let cursosCargados = {}; 
 
         document.addEventListener("DOMContentLoaded", () => {
             const sesionData = localStorage.getItem('docenteSesion');
@@ -431,6 +588,7 @@
                 inputDocente.value = docenteSesion.nombre || "Docente Autenticado";
             }
 
+            cargarPeriodos();
             cargarCursos();
         });
 
@@ -446,9 +604,58 @@
             document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
             
             document.getElementById(tabId).classList.add('active');
-            btn.classList.add('active');
+            if(btn) btn.classList.add('active');
             
-            document.getElementById('panelTitle').textContent = btn.textContent.replace(/[0-9.🏫🎓📊👨‍🎓]\s*/g, '');
+            if(btn) document.getElementById('panelTitle').textContent = btn.textContent.replace(/[0-9.🏫🎓📊👨‍🎓]\s*/g, '');
+        }
+
+        // Alternar entre Registro Individual y Excel dentro de la misma pestaña
+        function toggleModoRegistro(modo) {
+            const formIndiv = document.getElementById('formRegistroIndividual');
+            const formExcel = document.getElementById('formRegistroExcel');
+            const btnIndiv = document.getElementById('subtabIndivBtn');
+            const btnExcel = document.getElementById('subtabExcelBtn');
+
+            if (modo === 'individual') {
+                formIndiv.style.display = 'block';
+                formExcel.style.display = 'none';
+                btnIndiv.classList.add('active');
+                btnExcel.classList.remove('active');
+            } else {
+                formIndiv.style.display = 'none';
+                formExcel.style.display = 'block';
+                btnExcel.classList.add('active');
+                btnIndiv.classList.remove('active');
+            }
+        }
+
+        function mostrarNotificacion(titulo, mensaje, esError = false) {
+            const modal = document.getElementById('modalNotificacion');
+            document.getElementById('notifTitle').textContent = titulo;
+            document.getElementById('notifMessage').textContent = mensaje;
+            document.getElementById('notifIcon').textContent = esError ? "⚠️" : "🧸";
+            modal.style.display = 'flex';
+        }
+
+        function cerrarNotificacion() {
+            document.getElementById('modalNotificacion').style.display = 'none';
+        }
+
+        async function cargarPeriodos() {
+            const select = document.getElementById('selectPeriodos');
+            try {
+                const res = await fetch(`${API}/periodos`);
+                const periodos = await res.json();
+                select.innerHTML = '<option value="">-- Seleccionar Periodo Lectivo --</option>';
+                periodos.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.id_periodo;
+                    option.textContent = `${p.nombre_periodo} (${p.estado || 'Activo'})`;
+                    select.appendChild(option);
+                });
+            } catch (e) {
+                select.innerHTML = '<option value="">Error al cargar los periodos</option>';
+            }
         }
 
         async function cargarCursos() {
@@ -457,27 +664,139 @@
                 let data = await res.json();
                 
                 if (Array.isArray(data)) {
-                    data = data.filter(c => c.id_docente == docenteSesion.id_docente);
+                    cursosCargados = {};
+                    data.forEach(c => cursosCargados[c.id_curso] = c);
                 }
 
-                fillSelect('selectCursos', data, 'id_curso', 'nombre_curso');
-                fillSelect('selectCursoExcel', data, 'id_curso', 'nombre_curso');
-                fillSelect('selectCursoFiltro', data, 'id_curso', 'nombre_curso');
+                fillSelectCursos('selectCursos', data);
+                fillSelectCursos('selectCursoExcel', data);
+                fillSelectCursos('selectCursoFiltro', data);
+                renderTablaMisCursos(data);
             } catch (e) { 
                 console.error("Error cargando cursos", e); 
             }
         }
 
-        function fillSelect(elementId, items, valueProp, textProp) {
+        function renderTablaMisCursos(cursos) {
+            const tbody = document.getElementById('tablaMisCursosBody');
+            if (!Array.isArray(cursos) || cursos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Aún no ha creado cursos. Registre uno arriba.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = cursos.map(c => `
+                <tr>
+                    <td><strong>${c.nombre_curso}</strong></td>
+                    <td style="text-align: center;">${c.nombre_periodo || 'N/A'}</td>
+                    <td style="text-align: center;">
+                        <button onclick="irAMatricularDirecto(${c.id_curso})" class="btn-edit" style="background:#0e7490;">+ Matricular Niños</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function fillSelectCursos(elementId, items) {
             const el = document.getElementById(elementId);
-            el.innerHTML = '<option value="">-- Seleccionar --</option>';
+            el.innerHTML = '<option value="">-- Seleccionar Curso --</option>';
             if (Array.isArray(items)) {
                 items.forEach(i => {
                     const option = document.createElement('option');
-                    option.value = i[valueProp];
-                    option.textContent = i[textProp];
+                    option.value = i.id_curso;
+                    option.textContent = `${i.nombre_curso} (${i.nombre_periodo || 'Activo'})`;
                     el.appendChild(option);
                 });
+            }
+        }
+
+        function guardarCurso(redirigirAMatricula = false) {
+            const nombreCurso = document.getElementById('cursoNombre').value.trim();
+            const idPeriodo = document.getElementById('selectPeriodos').value;
+
+            if (!nombreCurso || !idPeriodo) {
+                mostrarNotificacion("Atención", "Por favor complete el nombre del curso y el periodo lectivo.", true);
+                return;
+            }
+
+            fetch(`${API}/cursos`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id_docente: docenteSesion.id_docente,
+                    nombre_curso: nombreCurso,
+                    id_periodo: idPeriodo
+                })
+            })
+            .then(res => res.json())
+            .then(async resData => {
+                if (resData.error) {
+                    mostrarNotificacion("Error al Guardar", resData.error, true);
+                } else {
+                    document.getElementById('formCrearCurso').reset();
+                    await cargarCursos();
+
+                    if (redirigirAMatricula) {
+                        const nuevoId = resData.id_curso || resData.insertId;
+                        irAMatricularDirecto(nuevoId);
+                        mostrarNotificacion("Curso Creado", `"${nombreCurso}" se ha creado. Ahora puedes matricular alumnos.`);
+                    } else {
+                        mostrarNotificacion("Curso Creado", `El curso "${nombreCurso}" ha sido registrado correctamente.`);
+                    }
+                }
+            })
+            .catch(() => mostrarNotificacion("Error del Sistema", "Error de conexión con el servidor.", true));
+        }
+
+        function irAMatricularDirecto(idCurso) {
+            switchTab('tabAlumno', document.getElementById('btnTabAlumno'));
+            toggleModoRegistro('individual');
+            if (idCurso) {
+                document.getElementById('selectCursos').value = idCurso;
+            }
+        }
+
+        function guardarAlumno(e) {
+            e.preventDefault();
+            const nombreAlumno = document.getElementById('alumnoNombre').value;
+
+            fetch(`${API}/alumnos`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id_curso: document.getElementById('selectCursos').value,
+                    nombre_completo: nombreAlumno
+                })
+            })
+            .then(res => res.json())
+            .then(resData => {
+                if (resData.error) {
+                    mostrarNotificacion("Error de Registro", resData.error, true);
+                } else {
+                    mostrarNotificacion("Matrícula Exitosa", `El/La estudiante ${nombreAlumno} ha sido matriculado/a exitosamente.`);
+                    e.target.reset();
+                }
+            })
+            .catch(() => mostrarNotificacion("Error del Sistema", "Error de conexión con el servidor.", true));
+        }
+
+        async function importarExcel(e) {
+            e.preventDefault();
+            const form = e.target;
+            const fileInput = document.getElementById("archivoExcel");
+            const formData = new FormData();
+            formData.append("excelFile", fileInput.files[0]);
+            formData.append("id_curso", document.getElementById("selectCursoExcel").value);
+
+            try {
+                const res = await fetch(`${API}/alumnos/upload-excel`, { method: 'POST', body: formData });
+                const data = await res.json();
+                if (res.ok) {
+                    mostrarNotificacion("Carga Masiva Completada", data.message || "Importación exitosa.");
+                    form.reset();
+                } else {
+                    mostrarNotificacion("Error de Importación", data.error || "Error al procesar plantilla Excel.", true);
+                }
+            } catch (err) {
+                mostrarNotificacion("Error del Sistema", "Error de comunicación o formato inválido.", true);
             }
         }
 
@@ -486,122 +805,94 @@
             const tbody = document.getElementById('tablaAlumnosBody');
 
             if (!idCurso) {
-                tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: var(--text-muted);">Seleccione un curso para ver sus estudiantes.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Seleccione un curso para ver sus estudiantes.</td></tr>';
                 return;
             }
+
+            const cursoActual = cursosCargados[idCurso];
+            const periodoDelCurso = cursoActual ? cursoActual.nombre_periodo : 'Sin Periodo';
 
             try {
                 const res = await fetch(`${API}/alumnos?id_curso=${idCurso}`);
                 const alumnos = await res.json();
 
                 if (!Array.isArray(alumnos) || alumnos.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: var(--text-muted);">No hay alumnos registrados en este curso.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">No hay niños matriculados en este curso.</td></tr>';
                     return;
                 }
+
+                alumnosCargados = {};
+                alumnos.forEach(a => alumnosCargados[a.id_alumno] = a.nombre_completo);
 
                 tbody.innerHTML = alumnos.map(a => `
                     <tr>
                         <td><strong>${a.nombre_completo}</strong></td>
                         <td style="text-align: center;">
-                            <button onclick="eliminarAlumno(${a.id_alumno})" class="btn-delete">Eliminar</button>
+                            <span style="background: #e2e8f0; padding: 4px 10px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; color: #475569;">
+                                ${periodoDelCurso}
+                            </span>
+                        </td>
+                        <td class="actions-cell">
+                            <button onclick="abrirModalEditar(${a.id_alumno}, '${a.nombre_completo.replace(/'/g, "\\'")}')" class="btn-edit">Editar</button>
+                            <button onclick="confirmarEliminarAlumno(${a.id_alumno})" class="btn-delete">Eliminar</button>
                         </td>
                     </tr>
                 `).join('');
             } catch (err) {
-                tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: var(--error);">Error al cargar alumnos.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--error);">Error al cargar alumnos.</td></tr>';
             }
         }
 
-        async function eliminarAlumno(idAlumno) {
-            if (!confirm('¿Estás seguro de que deseas eliminar este alumno?')) return;
+        function abrirModalEditar(idAlumno, nombreActual) {
+            document.getElementById('editIdAlumno').value = idAlumno;
+            document.getElementById('editNombreAlumno').value = nombreActual;
+            document.getElementById('modalEditarAlumno').style.display = 'flex';
+        }
 
+        function cerrarModalEditar() { document.getElementById('modalEditarAlumno').style.display = 'none'; }
+
+        async function actualizarAlumno(e) {
+            e.preventDefault();
+            const idAlumno = document.getElementById('editIdAlumno').value;
+            const nuevoNombre = document.getElementById('editNombreAlumno').value.trim();
+
+            try {
+                const res = await fetch(`${API}/alumnos/${idAlumno}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre_completo: nuevoNombre })
+                });
+
+                if (res.ok) {
+                    cerrarModalEditar();
+                    mostrarNotificacion("Estudiante Actualizado", `Datos actualizados correctamente.`);
+                    cargarAlumnosPorCurso();
+                }
+            } catch (err) {
+                mostrarNotificacion("Error del Sistema", "Error al actualizar.", true);
+            }
+        }
+
+        function confirmarEliminarAlumno(idAlumno) {
+            const nombreAlumno = alumnosCargados[idAlumno] || "el estudiante";
+            document.getElementById('confirmMessage').textContent = `¿Está seguro de retirar la matrícula a "${nombreAlumno}"?`;
+            document.getElementById('btnConfirmarDelete').onclick = () => ejecutarEliminacion(idAlumno);
+            document.getElementById('modalConfirmarEliminar').style.display = 'flex';
+        }
+
+        function cerrarModalConfirmar() { document.getElementById('modalConfirmarEliminar').style.display = 'none'; }
+
+        async function ejecutarEliminacion(idAlumno) {
+            cerrarModalConfirmar();
             try {
                 const res = await fetch(`${API}/alumnos/${idAlumno}`, { method: 'DELETE' });
-                const data = await res.json();
-                
                 if (res.ok) {
-                    showAlert(document.getElementById('msgLista'), data.message || "Alumno eliminado correctamente.", true);
+                    mostrarNotificacion("Retiro Exitoso", `Estudiante retirado del sistema.`);
                     cargarAlumnosPorCurso();
-                } else {
-                    showAlert(document.getElementById('msgLista'), data.error || "No se pudo eliminar el alumno.", false);
                 }
             } catch (err) {
-                showAlert(document.getElementById('msgLista'), "Error de comunicación con el servidor.", false);
+                mostrarNotificacion("Error del Sistema", "Error de comunicación.", true);
             }
-        }
-
-        async function postData(endpoint, data, msgId, formElement, callback) {
-            const alertEl = document.getElementById(msgId);
-            try {
-                const res = await fetch(`${API}/${endpoint}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                const resData = await res.json();
-                if (res.ok) {
-                    showAlert(alertEl, resData.message || "Guardado exitosamente.", true);
-                    if (formElement) formElement.reset();
-                    if (callback) callback();
-                } else {
-                    showAlert(alertEl, resData.error || "Error al guardar datos.", false);
-                }
-            } catch (e) {
-                showAlert(alertEl, "Error de conexión con el servidor.", false);
-            }
-        }
-
-        function guardarCurso(e) {
-            e.preventDefault();
-            if (!docenteSesion || !docenteSesion.id_docente) {
-                showAlert(document.getElementById('msgCurso'), "Error: Sesión no válida.", false);
-                return;
-            }
-
-            postData('cursos', {
-                id_docente: docenteSesion.id_docente,
-                nombre_curso: document.getElementById('cursoNombre').value
-            }, 'msgCurso', e.target, cargarCursos);
-        }
-
-        function guardarAlumno(e) {
-            e.preventDefault();
-            postData('alumnos', {
-                id_curso: document.getElementById('selectCursos').value,
-                nombre_completo: document.getElementById('alumnoNombre').value
-            }, 'msgAlumno', e.target);
-        }
-
-        async function importarExcel(e) {
-            e.preventDefault();
-            const form = e.target;
-            const fileInput = document.getElementById("archivoExcel");
-            const alertEl = document.getElementById("msgExcel");
-            const formData = new FormData();
-            formData.append("excelFile", fileInput.files[0]);
-            formData.append("id_curso", document.getElementById("selectCursoExcel").value);
-
-            try {
-                const res = await fetch(`${API}/alumnos/upload-excel`, { method: 'POST', body: formData });
-                const data = await res.json();
-                
-                if (res.ok) {
-                    showAlert(alertEl, data.message || "¡Importación exitosa!", true);
-                    form.reset();
-                } else {
-                    showAlert(alertEl, data.error || "Error al procesar el archivo Excel.", false);
-                }
-            } catch (err) {
-                showAlert(alertEl, "Error de comunicación o formato no válido.", false);
-            }
-        }
-
-        function showAlert(el, msg, isSuccess) {
-            if (!el) return;
-            el.textContent = msg || (isSuccess ? "Operación exitosa." : "Ocurrió un error.");
-            el.className = `alert ${isSuccess ? 'alert-success' : 'alert-error'}`;
-            el.style.display = 'block';
-            setTimeout(() => { el.style.display = 'none'; }, 4000);
         }
 
         function cerrarSesion() {
