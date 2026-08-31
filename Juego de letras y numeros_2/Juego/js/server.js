@@ -224,7 +224,6 @@ app.get('/api/admin/docentes', async (req, res) => {
     }
 });
 
-// CREAR DOCENTE DESDE PANEL ADMIN
 app.post('/api/admin/docentes', async (req, res) => {
     const { nombre, correo, password, rol } = req.body;
     if (!nombre || !correo || !password) {
@@ -246,7 +245,6 @@ app.post('/api/admin/docentes', async (req, res) => {
     }
 });
 
-// ACTUALIZAR DOCENTE DESDE PANEL ADMIN
 app.put('/api/admin/docentes/:id', async (req, res) => {
     const { id } = req.params;
     const { nombre, correo, password, rol } = req.body;
@@ -597,21 +595,42 @@ app.post('/api/partidas', async (req, res) => {
     }
 });
 
+// ROUTE REPORTES CORREGIDO SEGÚN LA ESTRUCTURA SQL
 app.get('/api/reportes', async (req, res) => {
     const { id_docente, id_periodo } = req.query;
 
     try {
-        let query = 'SELECT * FROM vista_reportes_docente';
+        let query = `
+            SELECT 
+                p.id_partida,
+                p.fecha_partida,
+                p.puntuacion_total,
+                p.tiempo_segundos,
+                a.nombre_completo AS alumno,
+                c.nombre_curso AS curso,
+                d.nombre AS nombre_docente,
+                j.nombre_juego,
+                j.nombre_juego AS materia,
+                c.id_docente,
+                c.id_periodo,
+                (SELECT COUNT(*) FROM detalle_errores de WHERE de.id_partida = p.id_partida) AS total_errores
+            FROM partidas p
+            INNER JOIN alumnos a ON p.id_alumno = a.id_alumno
+            INNER JOIN cursos c ON a.id_curso = c.id_curso
+            LEFT JOIN docentes d ON c.id_docente = d.id_docente
+            LEFT JOIN juegos j ON p.id_juego = j.id_juego
+        `;
+
         const conditions = [];
         const params = [];
 
-        if (id_docente) {
-            conditions.push('id_docente = ?');
+        if (id_docente && id_docente !== 'null' && id_docente !== 'undefined' && id_docente !== 'all' && id_docente !== '') {
+            conditions.push('c.id_docente = ?');
             params.push(id_docente);
         }
 
-        if (id_periodo) {
-            conditions.push('id_periodo = ?');
+        if (id_periodo && id_periodo !== 'null' && id_periodo !== 'undefined' && id_periodo !== 'all' && id_periodo !== '') {
+            conditions.push('c.id_periodo = ?');
             params.push(id_periodo);
         }
 
@@ -619,7 +638,7 @@ app.get('/api/reportes', async (req, res) => {
             query += ' WHERE ' + conditions.join(' AND ');
         }
 
-        query += ' ORDER BY fecha_partida DESC';
+        query += ' ORDER BY p.fecha_partida DESC';
 
         const [rows] = await db.query(query, params);
         res.json(rows);
