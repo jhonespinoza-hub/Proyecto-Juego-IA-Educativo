@@ -29,6 +29,11 @@
                 <button id="btn-nav-cursos" onclick="mostrarSeccion('cursos')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition w-full text-left">
                     <i class="fa-solid fa-book-open"></i> Asignación de Cursos
                 </button>
+                
+                <!-- BOTÓN AGREGADO PARA VER REPORTES -->
+                <button id="btn-nav-reportes" onclick="irAReportes()" class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 text-emerald-400 font-semibold transition w-full text-left mt-2 border-t border-slate-800 pt-3">
+                    <i class="fa-solid fa-chart-line text-emerald-400"></i> Ver Reportes
+                </button>
             </nav>
         </div>
         <button onclick="cerrarSesion()" class="flex items-center gap-3 p-3 rounded-lg bg-red-600 hover:bg-red-700 transition w-full">
@@ -262,6 +267,11 @@
             await cargarCursos();
             mostrarSeccion('docentes');
         });
+
+        /* --- REDIRECCIÓN A REPORTES --- */
+        function irAReportes() {
+            window.location.href = 'reporte.html';
+        }
 
         /* --- CONTROL DEL MODAL PERSONALIZADO (ESTILO DOCENTE) --- */
         function mostrarAlerta(titulo, mensaje, callback = null) {

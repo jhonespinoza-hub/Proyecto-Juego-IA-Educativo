@@ -296,7 +296,7 @@ app.delete('/api/admin/docentes/:id', async (req, res) => {
         await db.query('UPDATE cursos SET id_docente = NULL WHERE id_docente = ?', [id]);
 
         const [result] = await db.query('DELETE FROM docentes WHERE id_docente = ?', [id]);
-        
+
         if (result.affectedRows > 0) {
             res.json({ status: 'ok', message: 'Docente eliminado correctamente del sistema.' });
         } else {
@@ -460,7 +460,7 @@ app.get('/api/cursos/docente/:idDocente', async (req, res) => {
     try {
         const idDocente = req.params.idDocente;
         const { id_periodo } = req.query;
-        
+
         if (!idDocente || idDocente === 'undefined' || idDocente === 'null') {
             return res.status(400).json({ error: 'ID de docente no válido.' });
         }
@@ -553,7 +553,7 @@ app.delete('/api/alumnos/:id', async (req, res) => {
     const { id } = req.params;
     try {
         const [result] = await db.query('DELETE FROM alumnos WHERE id_alumno = ?', [id]);
-        
+
         if (result.affectedRows > 0) {
             res.json({ status: 'ok', message: 'Alumno eliminado correctamente.' });
         } else {
@@ -567,12 +567,12 @@ app.delete('/api/alumnos/:id', async (req, res) => {
 
 app.post('/api/partidas', async (req, res) => {
     const { id_alumno, puntuacion, tiempo, errores, id_juego = 2 } = req.body;
-    
+
     try {
         await db.query('CALL sp_guardar_partida(?, ?, ?, ?, @id_partida)', [
             id_alumno, puntuacion, tiempo, id_juego
         ]);
-        
+
         const [idResult] = await db.query('SELECT @id_partida AS id_partida');
         const id_partida = idResult[0].id_partida;
 
@@ -598,10 +598,33 @@ app.post('/api/partidas', async (req, res) => {
 });
 
 app.get('/api/reportes', async (req, res) => {
+    const { id_docente, id_periodo } = req.query;
+
     try {
-        const [rows] = await db.query('SELECT * FROM vista_reportes_docente ORDER BY fecha_partida DESC');
+        let query = 'SELECT * FROM vista_reportes_docente';
+        const conditions = [];
+        const params = [];
+
+        if (id_docente) {
+            conditions.push('id_docente = ?');
+            params.push(id_docente);
+        }
+
+        if (id_periodo) {
+            conditions.push('id_periodo = ?');
+            params.push(id_periodo);
+        }
+
+        if (conditions.length > 0) {
+            query += ' WHERE ' + conditions.join(' AND ');
+        }
+
+        query += ' ORDER BY fecha_partida DESC';
+
+        const [rows] = await db.query(query, params);
         res.json(rows);
     } catch (err) {
+        console.error('Error al obtener reportes:', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -674,7 +697,7 @@ app.post('/api/alumnos/upload-excel', upload.single('excelFile'), async (req, re
         const alumnosExcel = sheetData
             .map(row => {
                 const keys = Object.keys(row);
-                
+
                 const nombreKey = keys.find(k => {
                     const clean = k.toLowerCase().trim();
                     return clean.includes('nombre') || clean.includes('alumno');
@@ -700,7 +723,7 @@ app.post('/api/alumnos/upload-excel', upload.single('excelFile'), async (req, re
         }
 
         const [alumnosDB] = await db.query('SELECT LOWER(nombre_completo) AS nombre, codigo_estudiante AS codigo FROM alumnos');
-        
+
         const nombresExistentesDB = new Set(alumnosDB.map(a => a.nombre));
         const codigosExistentesDB = new Set(alumnosDB.filter(a => a.codigo).map(a => String(a.codigo).toLowerCase()));
 

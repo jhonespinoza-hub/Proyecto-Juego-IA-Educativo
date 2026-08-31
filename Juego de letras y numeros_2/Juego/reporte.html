@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte de Resultados - Panel del Docente</title>
+    <title>Reporte de Resultados</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
@@ -37,7 +37,6 @@
         }
 
         header h1 { font-size: 1.6rem; }
-
         .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
         .btn-header {
@@ -155,10 +154,10 @@
         <header>
             <div>
                 <h1>📊 Dashboard de Resultados</h1>
-                <p id="docenteBienvenida" style="font-size: 0.9rem; opacity: 0.9; margin-top: 4px;">Cargando información del docente...</p>
+                <p id="docenteBienvenida" style="font-size: 0.9rem; opacity: 0.9; margin-top: 4px;">Cargando información...</p>
             </div>
             <div class="header-actions">
-                <a href="docente_panel.html" class="btn-header">⬅️ Volver al Panel</a>
+                <a id="btnVolver" href="docente_panel.html" class="btn-header">⬅️ Volver al Panel</a>
                 <button class="btn-header" onclick="cargarReportes()">🔄 Actualizar</button>
                 <button class="btn-header btn-pdf" onclick="descargarPDF()">📄 Exportar PDF</button>
             </div>
@@ -181,24 +180,35 @@
 
         <div class="filters-card">
             <div class="filters-grid">
+                <!-- Filtro Exclusivo Administrador -->
+                <div class="filter-group" id="groupDocente" style="display: none;">
+                    <label for="filterDocente">👨‍🏫 Docente:</label>
+                    <select id="filterDocente" onchange="alCambiarDocente()">
+                        <option value="">Todos los docentes</option>
+                    </select>
+                </div>
+
                 <div class="filter-group">
                     <label for="filterPeriodo">🗓️ Periodo Académico:</label>
                     <select id="filterPeriodo" onchange="alCambiarPeriodo()">
                         <option value="">Todos los periodos</option>
                     </select>
                 </div>
+
                 <div class="filter-group">
                     <label for="filterAula">🏫 Aula / Curso:</label>
                     <select id="filterAula" onchange="aplicarFiltros()">
-                        <option value="">Todas mis aulas</option>
+                        <option value="">Todas las aulas</option>
                     </select>
                 </div>
+
                 <div class="filter-group">
                     <label for="filterEstudiante">🎓 Estudiante:</label>
                     <select id="filterEstudiante" onchange="aplicarFiltros()">
                         <option value="">Todos los estudiantes</option>
                     </select>
                 </div>
+
                 <div class="filter-group">
                     <label for="filterMateria">📚 Materia / Juego:</label>
                     <select id="filterMateria" onchange="aplicarFiltros()">
@@ -213,6 +223,7 @@
                 <thead>
                     <tr>
                         <th>Fecha</th>
+                        <th id="thDocente" style="display: none;">Docente</th>
                         <th>Curso / Aula</th>
                         <th>Alumno</th>
                         <th>Materia / Juego</th>
@@ -223,7 +234,7 @@
                 </thead>
                 <tbody id="tablaCuerpo">
                     <tr>
-                        <td colspan="7" style="text-align: center; color: var(--text-light);">Cargando registros...</td>
+                        <td colspan="8" style="text-align: center; color: var(--text-light);">Cargando registros...</td>
                     </tr>
                 </tbody>
             </table>
@@ -244,15 +255,22 @@
             }
 
             docenteSesion = JSON.parse(sesionData);
-            
-            if (docenteSesion.rol === 'admin') {
-                window.location.href = "admin_panel.html";
-                return;
-            }
-
             const txtBienvenida = document.getElementById('docenteBienvenida');
-            if (txtBienvenida && docenteSesion.nombre) {
-                txtBienvenida.textContent = `Reportes de las clases de: ${docenteSesion.nombre}`;
+            const btnVolver = document.getElementById('btnVolver');
+
+            // Adaptar interfaz si es Administrador o Docente
+            if (docenteSesion.rol === 'admin') {
+                if (txtBienvenida) txtBienvenida.textContent = "Reportes Generales del Sistema (Administrador)";
+                if (btnVolver) btnVolver.href = "admin_panel.html";
+                
+                // Mostrar controles exclusivos de Admin
+                document.getElementById('groupDocente').style.display = 'flex';
+                document.getElementById('thDocente').style.display = 'table-cell';
+            } else {
+                if (txtBienvenida && docenteSesion.nombre) {
+                    txtBienvenida.textContent = `Reportes de las clases de: ${docenteSesion.nombre}`;
+                }
+                if (btnVolver) btnVolver.href = "docente_panel.html";
             }
 
             await cargarPeriodos();
@@ -280,13 +298,19 @@
 
         async function cargarReportes() {
             const tablaCuerpo = document.getElementById('tablaCuerpo');
+            const colSpanTotal = docenteSesion && docenteSesion.rol === 'admin' ? 8 : 7;
             
             try {
-                const res = await fetch(`${URL_API_MYSQL}/reportes?id_docente=${docenteSesion.id_docente}`);
+                // Si es Admin trae todo; si es docente filtra por su ID
+                const urlFetch = docenteSesion.rol === 'admin'
+                    ? `${URL_API_MYSQL}/reportes`
+                    : `${URL_API_MYSQL}/reportes?id_docente=${docenteSesion.id_docente}`;
+
+                const res = await fetch(urlFetch);
                 const datos = await res.json();
 
                 if (!datos || datos.length === 0) {
-                    tablaCuerpo.innerHTML = `<tr><td colspan="7" style="text-align: center;">No hay registros disponibles aún.</td></tr>`;
+                    tablaCuerpo.innerHTML = `<tr><td colspan="${colSpanTotal}" style="text-align: center;">No hay registros disponibles aún.</td></tr>`;
                     limpiarEstadisticas();
                     return;
                 }
@@ -294,38 +318,34 @@
                 const partidasMap = new Map();
 
                 datos.forEach(row => {
-                    const esMiDocente = (row.id_docente && row.id_docente == docenteSesion.id_docente) || 
-                                        (row.docente && row.docente.toLowerCase() === docenteSesion.nombre.toLowerCase());
+                    if (!partidasMap.has(row.id_partida)) {
+                        partidasMap.set(row.id_partida, {
+                            id_partida: row.id_partida,
+                            fecha: row.fecha_partida ? new Date(row.fecha_partida).toLocaleString('es-ES') : 'Sin fecha',
+                            docente: row.docente || row.nombre_docente || 'Sin Asignar',
+                            curso: row.curso || 'Sin curso',
+                            periodo: row.nombre_periodo || row.periodo_academico || '',
+                            alumno: row.alumno || 'Desconocido',
+                            materia: row.nombre_juego ? `${row.materia || 'Materia'} (${row.nombre_juego})` : (row.materia || 'General'),
+                            puntuacion: row.puntuacion_total || 0,
+                            tiempo: row.tiempo_segundos || 0,
+                            errores: []
+                        });
+                    }
 
-                    if (esMiDocente) {
-                        if (!partidasMap.has(row.id_partida)) {
-                            partidasMap.set(row.id_partida, {
-                                id_partida: row.id_partida,
-                                fecha: row.fecha_partida ? new Date(row.fecha_partida).toLocaleString('es-ES') : 'Sin fecha',
-                                curso: row.curso || 'Sin curso',
-                                periodo: row.nombre_periodo || row.periodo_academico || '',
-                                alumno: row.alumno || 'Desconocido',
-                                materia: row.nombre_juego ? `${row.materia} (${row.nombre_juego})` : (row.materia || 'General'),
-                                puntuacion: row.puntuacion_total || 0,
-                                tiempo: row.tiempo_segundos || 0,
-                                errores: []
-                            });
-                        }
-
-                        if (row.operacion_planteada) {
-                            partidasMap.get(row.id_partida).errores.push({
-                                op: row.operacion_planteada,
-                                esp: row.respuesta_esperada,
-                                det: row.respuesta_detectada
-                            });
-                        }
+                    if (row.operacion_planteada) {
+                        partidasMap.get(row.id_partida).errores.push({
+                            op: row.operacion_planteada,
+                            esp: row.respuesta_esperada,
+                            det: row.respuesta_detectada
+                        });
                     }
                 });
 
                 todasLasPartidas = Array.from(partidasMap.values());
 
                 if (todasLasPartidas.length === 0) {
-                    tablaCuerpo.innerHTML = `<tr><td colspan="7" style="text-align: center;">No se encontraron registros bajo tu cuenta.</td></tr>`;
+                    tablaCuerpo.innerHTML = `<tr><td colspan="${colSpanTotal}" style="text-align: center;">No se encontraron registros.</td></tr>`;
                     limpiarEstadisticas();
                     return;
                 }
@@ -335,25 +355,39 @@
 
             } catch (e) {
                 console.error("Error al cargar reportes:", e);
-                tablaCuerpo.innerHTML = `<tr><td colspan="7" style="text-align: center; color: red;">Error al conectar con la base de datos MySQL.</td></tr>`;
+                tablaCuerpo.innerHTML = `<tr><td colspan="${colSpanTotal}" style="text-align: center; color: red;">Error al conectar con la base de datos MySQL.</td></tr>`;
             }
         }
 
         function poblarSelectsFiltros(partidas) {
+            const selectDocente = document.getElementById('filterDocente');
             const selectAula = document.getElementById('filterAula');
             const selectEstudiante = document.getElementById('filterEstudiante');
             const selectMateria = document.getElementById('filterMateria');
 
+            const docenteSel = selectDocente ? selectDocente.value : '';
             const periodoSel = document.getElementById('filterPeriodo').value;
-            const partidasFiltradasPorPeriodo = periodoSel 
-                ? partidas.filter(p => p.periodo === periodoSel) 
-                : partidas;
 
-            const aulas = [...new Set(partidasFiltradasPorPeriodo.map(p => p.curso))].sort();
-            const estudiantes = [...new Set(partidasFiltradasPorPeriodo.map(p => p.alumno))].sort();
-            const materias = [...new Set(partidasFiltradasPorPeriodo.map(p => p.materia))].sort();
+            // Poblar dropdown de Docentes si es Admin
+            if (docenteSesion.rol === 'admin' && selectDocente) {
+                const docentesUnicos = [...new Set(partidas.map(p => p.docente))].sort();
+                selectDocente.innerHTML = '<option value="">Todos los docentes</option>';
+                docentesUnicos.forEach(d => selectDocente.appendChild(new Option(d, d)));
+                selectDocente.value = docenteSel; // Preservar selección previa
+            }
 
-            selectAula.innerHTML = '<option value="">Todas mis aulas</option>';
+            // Filtrar preliminarmente para encadenar las opciones disponibles
+            const partidasFiltradasBase = partidas.filter(p => {
+                const coincideDocente = !docenteSel || p.docente === docenteSel;
+                const coincidePeriodo = !periodoSel || p.periodo === periodoSel;
+                return coincideDocente && coincidePeriodo;
+            });
+
+            const aulas = [...new Set(partidasFiltradasBase.map(p => p.curso))].sort();
+            const estudiantes = [...new Set(partidasFiltradasBase.map(p => p.alumno))].sort();
+            const materias = [...new Set(partidasFiltradasBase.map(p => p.materia))].sort();
+
+            selectAula.innerHTML = docenteSesion.rol === 'admin' ? '<option value="">Todas las aulas</option>' : '<option value="">Todas mis aulas</option>';
             aulas.forEach(a => selectAula.appendChild(new Option(a, a)));
 
             selectEstudiante.innerHTML = '<option value="">Todos los estudiantes</option>';
@@ -363,23 +397,30 @@
             materias.forEach(m => selectMateria.appendChild(new Option(m, m)));
         }
 
+        function alCambiarDocente() {
+            poblarSelectsFiltros(todasLasPartidas);
+            aplicarFiltros();
+        }
+
         function alCambiarPeriodo() {
             poblarSelectsFiltros(todasLasPartidas);
             aplicarFiltros();
         }
 
         function aplicarFiltros() {
+            const docenteSel = document.getElementById('filterDocente')?.value || '';
             const periodoSel = document.getElementById('filterPeriodo').value;
             const aulaSel = document.getElementById('filterAula').value;
             const estudianteSel = document.getElementById('filterEstudiante').value;
             const materiaSel = document.getElementById('filterMateria').value;
 
             const partidasFiltradas = todasLasPartidas.filter(p => {
+                const coincideDocente = !docenteSel || p.docente === docenteSel;
                 const coincidePeriodo = !periodoSel || p.periodo === periodoSel;
                 const coincideAula = !aulaSel || p.curso === aulaSel;
                 const coincideEstudiante = !estudianteSel || p.alumno === estudianteSel;
                 const coincideMateria = !materiaSel || p.materia === materiaSel;
-                return coincidePeriodo && coincideAula && coincideEstudiante && coincideMateria;
+                return coincideDocente && coincidePeriodo && coincideAula && coincideEstudiante && coincideMateria;
             });
 
             const totalPartidas = partidasFiltradas.length;
@@ -393,10 +434,14 @@
             const tablaCuerpo = document.getElementById('tablaCuerpo');
             tablaCuerpo.innerHTML = '';
 
+            const colSpanTotal = docenteSesion && docenteSesion.rol === 'admin' ? 8 : 7;
+
             if (partidasFiltradas.length === 0) {
-                tablaCuerpo.innerHTML = `<tr><td colspan="7" style="text-align: center;">No coinciden registros con los filtros seleccionados.</td></tr>`;
+                tablaCuerpo.innerHTML = `<tr><td colspan="${colSpanTotal}" style="text-align: center;">No coinciden registros con los filtros seleccionados.</td></tr>`;
                 return;
             }
+
+            const esAdmin = docenteSesion && docenteSesion.rol === 'admin';
 
             partidasFiltradas.forEach(p => {
                 let erroresHTML = '';
@@ -411,6 +456,7 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${p.fecha}</td>
+                    ${esAdmin ? `<td><strong>${p.docente}</strong></td>` : ''}
                     <td><strong>${p.curso}</strong> ${p.periodo ? `<small style="color:var(--text-light)">(${p.periodo})</small>` : ''}</td>
                     <td>${p.alumno}</td>
                     <td>${p.materia}</td>
@@ -432,17 +478,19 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
+            const docenteSel = document.getElementById('filterDocente')?.value || 'Todos';
             const periodoSel = document.getElementById('filterPeriodo').value || 'Todos';
             const aulaSel = document.getElementById('filterAula').value || 'Todas';
             const estudianteSel = document.getElementById('filterEstudiante').value || 'Todos';
             const materiaSel = document.getElementById('filterMateria').value || 'Todas';
 
             const partidasFiltradas = todasLasPartidas.filter(p => {
+                const coincideDocente = !docenteSel || docenteSel === 'Todos' || p.docente === docenteSel;
                 const coincidePeriodo = !periodoSel || periodoSel === 'Todos' || p.periodo === periodoSel;
                 const coincideAula = !aulaSel || aulaSel === 'Todas' || p.curso === aulaSel;
                 const coincideEstudiante = !estudianteSel || estudianteSel === 'Todos' || p.alumno === estudianteSel;
                 const coincideMateria = !materiaSel || materiaSel === 'Todas' || p.materia === materiaSel;
-                return coincidePeriodo && coincideAula && coincideEstudiante && coincideMateria;
+                return coincideDocente && coincidePeriodo && coincideAula && coincideEstudiante && coincideMateria;
             });
 
             // Header institucional
@@ -457,9 +505,11 @@
             doc.setTextColor(15, 23, 42);
             doc.setFontSize(10);
             doc.setFont('helvetica', 'normal');
-            doc.text(`Docente: ${docenteSesion ? docenteSesion.nombre : 'N/A'}`, 14, 32);
+
+            const nombreUsuario = docenteSesion.rol === 'admin' ? `Administrador (${docenteSesion.nombre})` : docenteSesion.nombre;
+            doc.text(`Generado por: ${nombreUsuario}`, 14, 32);
             doc.text(`Fecha de emisión: ${new Date().toLocaleDateString('es-ES')}`, 215, 32);
-            doc.text(`Filtros: Periodo [${periodoSel}] | Aula [${aulaSel}] | Estudiante [${estudianteSel}] | Materia [${materiaSel}]`, 14, 38);
+            doc.text(`Filtros: Docente [${docenteSel}] | Periodo [${periodoSel}] | Aula [${aulaSel}] | Estudiante [${estudianteSel}]`, 14, 38);
 
             const totalPartidas = partidasFiltradas.length;
             const sumaPuntos = partidasFiltradas.reduce((acc, p) => acc + p.puntuacion, 0);
@@ -475,25 +525,44 @@
             doc.text(`Puntaje Promedio: ${promPuntos} pts`, 115, 52);
             doc.text(`Total Errores: ${totalErrores}`, 210, 52);
 
+            const esAdmin = docenteSesion && docenteSesion.rol === 'admin';
+
             const filas = partidasFiltradas.map(p => {
                 const detalleErrores = p.errores.length === 0 
                     ? 'Sin errores' 
                     : p.errores.map(e => `${e.op} (Dijo: ${e.det})`).join(', ');
 
-                return [
-                    p.fecha,
-                    `${p.curso} ${p.periodo ? `(${p.periodo})` : ''}`,
-                    p.alumno,
-                    p.materia,
-                    `${p.puntuacion} pts`,
-                    `${p.tiempo} seg`,
-                    detalleErrores
-                ];
+                if (esAdmin) {
+                    return [
+                        p.fecha,
+                        p.docente,
+                        `${p.curso} ${p.periodo ? `(${p.periodo})` : ''}`,
+                        p.alumno,
+                        p.materia,
+                        `${p.puntuacion} pts`,
+                        `${p.tiempo} seg`,
+                        detalleErrores
+                    ];
+                } else {
+                    return [
+                        p.fecha,
+                        `${p.curso} ${p.periodo ? `(${p.periodo})` : ''}`,
+                        p.alumno,
+                        p.materia,
+                        `${p.puntuacion} pts`,
+                        `${p.tiempo} seg`,
+                        detalleErrores
+                    ];
+                }
             });
+
+            const cabeceras = esAdmin 
+                ? [['Fecha', 'Docente', 'Curso / Aula', 'Alumno', 'Materia / Juego', 'Puntaje', 'Tiempo', 'Detalle de Errores']]
+                : [['Fecha', 'Curso / Aula', 'Alumno', 'Materia / Juego', 'Puntaje', 'Tiempo', 'Detalle de Errores']];
 
             doc.autoTable({
                 startY: 62,
-                head: [['Fecha', 'Curso / Aula', 'Alumno', 'Materia / Juego', 'Puntaje', 'Tiempo', 'Detalle de Errores']],
+                head: cabeceras,
                 body: filas,
                 theme: 'striped',
                 headStyles: {
@@ -506,19 +575,10 @@
                     fontSize: 8.5,
                     textColor: [15, 23, 42]
                 },
-                columnStyles: {
-                    0: { cellWidth: 35 },
-                    1: { cellWidth: 35 },
-                    2: { cellWidth: 40 },
-                    3: { cellWidth: 40 },
-                    4: { cellWidth: 22 },
-                    5: { cellWidth: 20 },
-                    6: { cellWidth: 'auto' }
-                },
                 margin: { left: 14, right: 14 }
             });
 
-            doc.save(`Reporte_Partidas_${docenteSesion ? docenteSesion.nombre.replace(/\s+/g, '_') : 'Docente'}.pdf`);
+            doc.save(`Reporte_Partidas_${docenteSesion ? docenteSesion.nombre.replace(/\s+/g, '_') : 'General'}.pdf`);
         }
     </script>
 </body>
