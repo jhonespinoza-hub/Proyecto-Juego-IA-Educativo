@@ -549,7 +549,7 @@
             </p>
             <div class="score-box">
                 <p style="font-weight: 600; color: var(--text-muted);">PUNTUACIÓN FINAL</p>
-                <h3 id="finalScoreText">0 Pts</h3>
+                <h3 id="finalScoreText">0 / 10 Pts</h3>
             </div>
             <div style="display: flex; gap: 10px; flex-direction: column;">
                 <button id="btnRestart" class="btn-action">
@@ -577,7 +577,7 @@
         let model, webcam, maxPredictions;
         let isCameraReady = false;
         let isProcessingMatch = false;
-        let lastDetectionTime = 0; // Controla el temporizador entre detecciones
+        let lastDetectionTime = 0;
 
         // Elementos DOM
         const scoreText = document.getElementById('scoreText');
@@ -636,7 +636,6 @@
         function generateOperations() {
             let ops = [];
             
-            // Generación de Sumas (resultado distinto de 4)
             while (ops.filter(o => o.type === 'suma').length < 2) {
                 let a = Math.floor(Math.random() * 10);
                 let maxB = 9 - a;
@@ -648,7 +647,6 @@
                 }
             }
             
-            // Generación de Restas (resultado distinto de 4)
             while (ops.filter(o => o.type === 'resta').length < 2) {
                 let a = Math.floor(Math.random() * 10);
                 let b = Math.floor(Math.random() * (a + 1));
@@ -745,7 +743,6 @@
         async function predict() {
             if (!model || !webcam || isProcessingMatch) return;
 
-            // Bloqueo por temporizador: ignora lecturas si han pasado menos de 3.5 segundos desde la última penalización o acierto
             if (Date.now() - lastDetectionTime < 3500) return;
 
             const prediction = await model.predict(webcam.canvas);
@@ -760,7 +757,6 @@
                 }
             }
 
-            // Ignorar clases "NADA", "FONDO", etc.
             if (isIgnoredClass(rawBestClass)) return;
 
             const detectedNumber = normalizePredictionLabel(rawBestClass);
@@ -768,13 +764,11 @@
             if (detectedNumber === "") return;
 
             if (parseInt(detectedNumber, 10) === currentExpectedResult) {
-                // Requiere 95% de confianza (0.95) para darlo como correcto
                 if (highestProb >= 0.95) {
                     lastDetectionTime = Date.now();
                     handleSuccessMatch(detectedNumber);
                 }
             } else {
-                // Requiere 75% de confianza (0.75) para penalizar
                 if (highestProb >= 0.75) {
                     lastDetectionTime = Date.now();
                     handleErrorMatch(detectedNumber);
@@ -785,14 +779,15 @@
         function handleSuccessMatch(detectedNumber) {
             isProcessingMatch = true;
 
-            score += 10;
+            // 4 ejercicios * 2.5 pts = 10 pts
+            score += 2.5;
             scoreText.textContent = `Puntos: ${score}`;
 
             resultBox.textContent = detectedNumber;
             resultBox.classList.remove('active');
             resultBox.style.color = 'var(--success)';
 
-            feedback.textContent = `🎉 ¡Correcto! El resultado es ${detectedNumber} (+10 pts).`;
+            feedback.textContent = `🎉 ¡Correcto! El resultado es ${detectedNumber} (+2.5 pts).`;
             feedback.style.color = "var(--success)";
             feedback.style.background = "#dcfce7";
 
@@ -813,16 +808,16 @@
         function handleErrorMatch(detectedNumber) {
             isProcessingMatch = true;
 
-            score = Math.max(0, score - 5);
+            // Penalización de 1 punto por error
+            score = Math.max(0, score - 1);
             scoreText.textContent = `Puntos: ${score}`;
 
-            feedback.textContent = `❌ Mostraste el ${detectedNumber}, es incorrecto (-5 pts). ¡Retira la tarjeta!`;
+            feedback.textContent = `❌ Mostraste el ${detectedNumber}, es incorrecto (-1 pt). ¡Retira la tarjeta!`;
             feedback.style.color = "var(--error)";
             feedback.style.background = "#fef2f2";
 
             speak(`Incorrecto. Mostraste el número ${detectedNumber}. Retira la tarjeta e intenta de nuevo.`);
 
-            // Otorga 3.5 segundos para que el niño retire la tarjeta de la cámara
             setTimeout(() => {
                 feedback.textContent = "Muestra la tarjeta del resultado a la cámara";
                 feedback.style.color = "var(--primary)";
@@ -833,7 +828,7 @@
 
         function showWinModal() {
             winModal.style.display = 'flex';
-            finalScoreText.textContent = `${score} / 40 Pts`;
+            finalScoreText.textContent = `${score} / 10 Pts`;
             speak(`¡Felicidades! Has completado todas las operaciones con ${score} puntos.`);
         }
 

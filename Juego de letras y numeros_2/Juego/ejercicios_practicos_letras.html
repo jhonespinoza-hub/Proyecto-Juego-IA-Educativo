@@ -526,7 +526,7 @@
             </p>
             <div class="score-box">
                 <p style="font-weight: 600; color: var(--text-muted);">PUNTUACIÓN FINAL</p>
-                <h3 id="finalScoreText">0 Pts</h3>
+                <h3 id="finalScoreText">0 / 10 Pts</h3>
             </div>
             <button id="btnRestart" class="btn-action">🔄 Jugar Otra Vez</button>
             <button id="btnHomeModal" class="btn-action" style="background: #3b82f6; color: white;">
@@ -802,16 +802,18 @@
             isProcessingMatch = true;
             const currentWord = selectedWords[currentRound].word;
 
-            updateScore(10);
-            showFeedback(`🎉 ¡Excelente! Encontraste la letra ${letter} (+10 pts).`, 'feedback-correct');
+            showFeedback(`🎉 ¡Excelente! Encontraste la letra ${letter}.`, 'feedback-correct');
             speak(`¡Muy bien! Esa es la letra ${letter}`);
 
             currentTargetIndex++;
             renderWord();
 
             if (currentTargetIndex >= activeIndicesToFill.length) {
+                // 5 palabras * 2.0 pts = 10 pts
+                updateScore(2.0);
+
                 setTimeout(() => {
-                    showFeedback(`🎉 ¡Excelente! Completaste la palabra ${currentWord}.`, 'feedback-correct');
+                    showFeedback(`🎉 ¡Excelente! Completaste la palabra ${currentWord} (+2 pts).`, 'feedback-correct');
                     speak(`¡Fantástico! Completaste la palabra ${currentWord}`);
                 }, 1000);
 
@@ -839,9 +841,11 @@
 
         function handleErrorLetter(letter) {
             isProcessingMatch = true;
-            updateScore(-5);
 
-            showFeedback(`❌ Mostraste la letra ${letter}, es incorrecta (-5 pts). ¡Retira la tarjeta!`, 'feedback-warning');
+            // Penalización de 1.5 puntos por error
+            updateScore(-1.5);
+
+            showFeedback(`❌ Mostraste la letra ${letter}, es incorrecta (-1.5 pts). ¡Retira la tarjeta!`, 'feedback-warning');
             speak(`Incorrecto. Mostraste la letra ${letter}. Retira la tarjeta e intenta de nuevo.`);
 
             setTimeout(() => {
@@ -854,7 +858,7 @@
 
         function showWinModal() {
             winModal.style.display = 'flex';
-            finalScoreText.textContent = `${score} Pts`;
+            finalScoreText.textContent = `${score} / 10 Pts`;
             speak(`¡Felicidades! Has completado todas las palabras con ${score} puntos.`);
         }
 
