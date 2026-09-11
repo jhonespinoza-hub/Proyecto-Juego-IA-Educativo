@@ -576,6 +576,10 @@
         let isCameraReady = false;
         let isProcessingMatch = false;
 
+        // Variables de Registro de Partida y Errores
+        let startTime = 0;
+        let arrayErrores = [];
+
         const roundText = document.getElementById('roundText');
         const wordImage = document.getElementById('wordImage');
         const wordDisplay = document.getElementById('wordDisplay');
@@ -699,6 +703,8 @@
             currentRound = 0;
             score = 0;
             lastDetectionTime = 0;
+            startTime = Date.now();
+            arrayErrores = [];
             updateScore(0);
             
             let shuffled = [...BANCO_PALABRAS].sort(() => 0.5 - Math.random());
@@ -842,6 +848,15 @@
         function handleErrorLetter(letter) {
             isProcessingMatch = true;
 
+            // Registrar el detalle del error
+            const currentWord = selectedWords[currentRound].word;
+            const expectedLetter = currentWord[activeIndicesToFill[currentTargetIndex]];
+            arrayErrores.push({
+                operacion: `Completar ${currentWord}`,
+                esperado: String(expectedLetter),
+                mostrado: String(letter)
+            });
+
             // Penalización de 1.5 puntos por error
             updateScore(-1.5);
 
@@ -849,17 +864,48 @@
             speak(`Incorrecto. Mostraste la letra ${letter}. Retira la tarjeta e intenta de nuevo.`);
 
             setTimeout(() => {
-                const currentWord = selectedWords[currentRound].word;
-                const expectedLetter = currentWord[activeIndicesToFill[currentTargetIndex]];
                 showFeedback(`Busca la tarjeta con la letra "${expectedLetter}" y muéstrala`);
                 isProcessingMatch = false;
-            }, 3500);
+            }, 5000);
+        }
+
+        async function guardarPartida() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const idAlumno = urlParams.get('id_alumno') || sessionStorage.getItem('estudiante_id');
+            const tiempoSegundos = Math.round((Date.now() - startTime) / 1000);
+
+            if (!idAlumno || idAlumno === 'invitado' || Number.isNaN(Number(idAlumno))) {
+                console.warn('Partida no guardada: no hay un alumno seleccionado.');
+                return;
+            }
+
+            const payload = {
+                id_alumno: Number(idAlumno),
+                puntuacion: score,
+                tiempo: tiempoSegundos,
+                errores: arrayErrores,
+                id_juego: 1 // 1 corresponde a Letras/Palabras
+            };
+
+            try {
+                const response = await fetch('http://localhost:3000/api/partidas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const resData = await response.json();
+                if (!response.ok) throw new Error(resData.error || 'No se pudo guardar la partida.');
+                console.log("Partida de letras registrada:", resData);
+            } catch (err) {
+                console.error("Error al registrar la partida:", err);
+            }
         }
 
         function showWinModal() {
             winModal.style.display = 'flex';
             finalScoreText.textContent = `${score} / 10 Pts`;
             speak(`¡Felicidades! Has completado todas las palabras con ${score} puntos.`);
+            guardarPartida();
         }
 
         window.addEventListener('DOMContentLoaded', initAI);

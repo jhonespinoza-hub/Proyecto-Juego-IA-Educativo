@@ -315,12 +315,12 @@ app.get('/api/admin/cursos', async (req, res) => {
                 c.nombre_curso, 
                 c.id_docente, 
                 c.id_periodo,
-                p.nombre_periodo,
+                pa.nombre_periodo,
                 d.nombre AS nombre_docente, 
                 d.correo AS correo_docente 
             FROM cursos c 
             LEFT JOIN docentes d ON c.id_docente = d.id_docente 
-            LEFT JOIN periodos_academicos p ON c.id_periodo = p.id_periodo
+            LEFT JOIN periodos_academicos pa ON c.id_periodo = pa.id_periodo
         `;
         const params = [];
 
@@ -466,8 +466,8 @@ app.get('/api/cursos/docente/:idDocente', async (req, res) => {
         let query = `
             SELECT c.*, p.nombre_periodo 
             FROM cursos c
-            LEFT JOIN periodos_academicos p ON c.id_periodo = p.id_periodo
-            WHERE c.id_docente = ?
+            INNER JOIN periodos_academicos p ON c.id_periodo = p.id_periodo
+            WHERE c.id_docente = ? AND LOWER(TRIM(p.estado)) = 'activo'
         `;
         const params = [idDocente];
 
@@ -563,39 +563,67 @@ app.delete('/api/alumnos/:id', async (req, res) => {
     }
 });
 
+// GUARDAR PARTIDA (CORREGIDO Y VALIDADO)
 app.post('/api/partidas', async (req, res) => {
-    const { id_alumno, puntuacion, tiempo, errores, id_juego = 2 } = req.body;
+    let { id_alumno, puntuacion, tiempo, errores, id_juego } = req.body;
 
+    // Asignar juego por defecto si no se especifica
+    const juegoFinal = id_juego ? parseInt(id_juego) : 2;
+    const idAlumnoNum = parseInt(id_alumno);
+
+    // Validar que id_alumno sea un número válido para evitar fallos de Foreign Key
+    if (!id_alumno || isNaN(idAlumnoNum)) {
+        return res.status(400).json({
+            error: 'No se puede guardar la partida: Se requiere un ID de alumno válido.'
+        });
+    }
+
+    let connection;
     try {
-        await db.query('CALL sp_guardar_partida(?, ?, ?, ?, @id_partida)', [
-            id_alumno, puntuacion, tiempo, id_juego
+        // La variable de salida debe leerse en la misma conexión que ejecuta el procedimiento.
+        connection = await db.getConnection();
+        await connection.beginTransaction();
+        await connection.query('CALL sp_guardar_partida(?, ?, ?, ?, @id_partida)', [
+            idAlumnoNum,
+            puntuacion || 0,
+            tiempo || 0,
+            juegoFinal
         ]);
 
-        const [idResult] = await db.query('SELECT @id_partida AS id_partida');
+        const [idResult] = await connection.query('SELECT @id_partida AS id_partida');
         const id_partida = idResult[0].id_partida;
 
-        if (errores && errores.length > 0) {
+        if (!id_partida) {
+            throw new Error('El procedimiento no devolvió el ID de la partida.');
+        }
+
+        // Registrar detalle de errores si existen
+        if (errores && Array.isArray(errores) && errores.length > 0) {
             const errorValues = errores.map(e => [
                 id_partida, 
-                e.operacion || e.op, 
-                e.esperado || e.esp, 
-                e.mostrado || e.det
+                e.operacion || e.op || 'Sin especificación',
+                e.esperado || e.esp || '',
+                e.mostrado || e.det || ''
             ]);
 
-            await db.query(
+            await connection.query(
                 'INSERT INTO detalle_errores (id_partida, operacion_planteada, respuesta_esperada, respuesta_detectada) VALUES ?',
                 [errorValues]
             );
         }
 
-        res.json({ status: 'ok', id_partida });
+        await connection.commit();
+        res.json({ status: 'ok', id_partida, message: 'Partida guardada exitosamente.' });
     } catch (err) {
+        if (connection) await connection.rollback();
         console.error('Error al guardar partida:', err);
         res.status(500).json({ error: err.message });
+    } finally {
+        if (connection) connection.release();
     }
 });
 
-// ROUTE REPORTES CORREGIDO SEGÚN LA ESTRUCTURA SQL
+// REPORTES
 app.get('/api/reportes', async (req, res) => {
     const { id_docente, id_periodo } = req.query;
 
@@ -613,10 +641,12 @@ app.get('/api/reportes', async (req, res) => {
                 j.nombre_juego AS materia,
                 c.id_docente,
                 c.id_periodo,
+                pa.nombre_periodo,
                 (SELECT COUNT(*) FROM detalle_errores de WHERE de.id_partida = p.id_partida) AS total_errores
             FROM partidas p
             INNER JOIN alumnos a ON p.id_alumno = a.id_alumno
             INNER JOIN cursos c ON a.id_curso = c.id_curso
+            LEFT JOIN periodos_academicos pa ON c.id_periodo = pa.id_periodo
             LEFT JOIN docentes d ON c.id_docente = d.id_docente
             LEFT JOIN juegos j ON p.id_juego = j.id_juego
         `;
@@ -641,6 +671,31 @@ app.get('/api/reportes', async (req, res) => {
         query += ' ORDER BY p.fecha_partida DESC';
 
         const [rows] = await db.query(query, params);
+        if (rows.length > 0) {
+            const idsPartidas = rows.map(row => row.id_partida);
+            const placeholders = idsPartidas.map(() => '?').join(', ');
+            const [errores] = await db.query(
+                `SELECT id_partida, operacion_planteada, respuesta_esperada, respuesta_detectada
+                 FROM detalle_errores
+                 WHERE id_partida IN (${placeholders})
+                 ORDER BY id_partida`,
+                idsPartidas
+            );
+
+            const erroresPorPartida = new Map();
+            errores.forEach(error => {
+                if (!erroresPorPartida.has(error.id_partida)) erroresPorPartida.set(error.id_partida, []);
+                erroresPorPartida.get(error.id_partida).push({
+                    operacion: error.operacion_planteada,
+                    esperado: error.respuesta_esperada,
+                    mostrado: error.respuesta_detectada
+                });
+            });
+
+            rows.forEach(row => {
+                row.errores = erroresPorPartida.get(row.id_partida) || [];
+            });
+        }
         res.json(rows);
     } catch (err) {
         console.error('Error al obtener reportes:', err);

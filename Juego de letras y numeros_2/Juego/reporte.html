@@ -180,7 +180,6 @@
 
         <div class="filters-card">
             <div class="filters-grid">
-                <!-- Filtro Exclusivo Administrador -->
                 <div class="filter-group" id="groupDocente" style="display: none;">
                     <label for="filterDocente">👨‍🏫 Docente:</label>
                     <select id="filterDocente" onchange="alCambiarDocente()">
@@ -197,7 +196,7 @@
 
                 <div class="filter-group">
                     <label for="filterAula">🏫 Aula / Curso:</label>
-                    <select id="filterAula" onchange="aplicarFiltros()">
+                    <select id="filterAula" onchange="alCambiarAula()">
                         <option value="">Todas las aulas</option>
                     </select>
                 </div>
@@ -258,12 +257,10 @@
             const txtBienvenida = document.getElementById('docenteBienvenida');
             const btnVolver = document.getElementById('btnVolver');
 
-            // Adaptar interfaz si es Administrador o Docente
             if (docenteSesion.rol === 'admin') {
                 if (txtBienvenida) txtBienvenida.textContent = "Reportes Generales del Sistema (Administrador)";
                 if (btnVolver) btnVolver.href = "admin_panel.html";
                 
-                // Mostrar controles exclusivos de Admin
                 document.getElementById('groupDocente').style.display = 'flex';
                 document.getElementById('thDocente').style.display = 'table-cell';
             } else {
@@ -301,7 +298,6 @@
             const colSpanTotal = docenteSesion && docenteSesion.rol === 'admin' ? 8 : 7;
             
             try {
-                // Si es Admin trae todo; si es docente filtra por su ID
                 const urlFetch = docenteSesion.rol === 'admin'
                     ? `${URL_API_MYSQL}/reportes`
                     : `${URL_API_MYSQL}/reportes?id_docente=${docenteSesion.id_docente}`;
@@ -315,47 +311,27 @@
                     return;
                 }
 
-                const partidasMap = new Map();
-
-                datos.forEach(row => {
-                    if (!partidasMap.has(row.id_partida)) {
-                        partidasMap.set(row.id_partida, {
-                            id_partida: row.id_partida,
-                            fecha: row.fecha_partida ? new Date(row.fecha_partida).toLocaleString('es-ES') : 'Sin fecha',
-                            docente: row.docente || row.nombre_docente || 'Sin Asignar',
-                            curso: row.curso || 'Sin curso',
-                            periodo: row.nombre_periodo || row.periodo_academico || '',
-                            alumno: row.alumno || 'Desconocido',
-                            materia: row.nombre_juego ? `${row.materia || 'Materia'} (${row.nombre_juego})` : (row.materia || 'General'),
-                            puntuacion: row.puntuacion_total || 0,
-                            tiempo: row.tiempo_segundos || 0,
-                            errores: []
-                        });
-                    }
-
-                    if (row.operacion_planteada) {
-                        partidasMap.get(row.id_partida).errores.push({
-                            op: row.operacion_planteada,
-                            esp: row.respuesta_esperada,
-                            det: row.respuesta_detectada
-                        });
-                    }
-                });
-
-                todasLasPartidas = Array.from(partidasMap.values());
-
-                if (todasLasPartidas.length === 0) {
-                    tablaCuerpo.innerHTML = `<tr><td colspan="${colSpanTotal}" style="text-align: center;">No se encontraron registros.</td></tr>`;
-                    limpiarEstadisticas();
-                    return;
-                }
+                // Sincronización precisa con las columnas devueltas por server.js
+                todasLasPartidas = datos.map(row => ({
+                    id_partida: row.id_partida,
+                    fecha: row.fecha_partida ? new Date(row.fecha_partida).toLocaleString('es-ES') : 'Sin fecha',
+                    docente: row.nombre_docente || 'Sin Asignar',
+                    curso: row.curso || 'Sin curso',
+                    periodo: row.nombre_periodo || '',
+                    alumno: row.alumno || 'Desconocido',
+                    materia: row.nombre_juego || row.materia || 'General',
+                    puntuacion: row.puntuacion_total || 0,
+                    tiempo: row.tiempo_segundos || 0,
+                    total_errores: row.total_errores || 0,
+                    errores: Array.isArray(row.errores) ? row.errores : []
+                }));
 
                 poblarSelectsFiltros(todasLasPartidas);
                 aplicarFiltros();
 
             } catch (e) {
                 console.error("Error al cargar reportes:", e);
-                tablaCuerpo.innerHTML = `<tr><td colspan="${colSpanTotal}" style="text-align: center; color: red;">Error al conectar con la base de datos MySQL.</td></tr>`;
+                tablaCuerpo.innerHTML = `<tr><td colspan="${colSpanTotal}" style="text-align: center; color: red;">Error al conectar con el servidor backend.</td></tr>`;
             }
         }
 
@@ -368,30 +344,26 @@
             const docenteSel = selectDocente ? selectDocente.value : '';
             const periodoSel = document.getElementById('filterPeriodo').value;
 
-            // Poblar dropdown de Docentes si es Admin
             if (docenteSesion.rol === 'admin' && selectDocente) {
-                const docentesUnicos = [...new Set(partidas.map(p => p.docente))].sort();
+                const docentesUnicos = [...new Set(partidas.map(p => p.docente))].filter(Boolean).sort();
                 selectDocente.innerHTML = '<option value="">Todos los docentes</option>';
                 docentesUnicos.forEach(d => selectDocente.appendChild(new Option(d, d)));
-                selectDocente.value = docenteSel; // Preservar selección previa
+                selectDocente.value = docenteSel;
             }
 
-            // Filtrar preliminarmente para encadenar las opciones disponibles
             const partidasFiltradasBase = partidas.filter(p => {
                 const coincideDocente = !docenteSel || p.docente === docenteSel;
                 const coincidePeriodo = !periodoSel || p.periodo === periodoSel;
                 return coincideDocente && coincidePeriodo;
             });
 
-            const aulas = [...new Set(partidasFiltradasBase.map(p => p.curso))].sort();
-            const estudiantes = [...new Set(partidasFiltradasBase.map(p => p.alumno))].sort();
-            const materias = [...new Set(partidasFiltradasBase.map(p => p.materia))].sort();
+            const aulas = [...new Set(partidasFiltradasBase.map(p => p.curso))].filter(Boolean).sort();
+            const materias = [...new Set(partidasFiltradasBase.map(p => p.materia))].filter(Boolean).sort();
 
             selectAula.innerHTML = docenteSesion.rol === 'admin' ? '<option value="">Todas las aulas</option>' : '<option value="">Todas mis aulas</option>';
             aulas.forEach(a => selectAula.appendChild(new Option(a, a)));
 
-            selectEstudiante.innerHTML = '<option value="">Todos los estudiantes</option>';
-            estudiantes.forEach(e => selectEstudiante.appendChild(new Option(e, e)));
+            actualizarEstudiantes(partidasFiltradasBase);
 
             selectMateria.innerHTML = '<option value="">Todas las materias</option>';
             materias.forEach(m => selectMateria.appendChild(new Option(m, m)));
@@ -405,6 +377,31 @@
         function alCambiarPeriodo() {
             poblarSelectsFiltros(todasLasPartidas);
             aplicarFiltros();
+        }
+
+        function alCambiarAula() {
+            const docenteSel = document.getElementById('filterDocente')?.value || '';
+            const periodoSel = document.getElementById('filterPeriodo').value;
+            const aulaSel = document.getElementById('filterAula').value;
+            const partidasBase = todasLasPartidas.filter(p => {
+                const coincideDocente = !docenteSel || p.docente === docenteSel;
+                const coincidePeriodo = !periodoSel || p.periodo === periodoSel;
+                const coincideAula = !aulaSel || p.curso === aulaSel;
+                return coincideDocente && coincidePeriodo && coincideAula;
+            });
+
+            actualizarEstudiantes(partidasBase);
+            aplicarFiltros();
+        }
+
+        function actualizarEstudiantes(partidas) {
+            const selectEstudiante = document.getElementById('filterEstudiante');
+            const estudianteActual = selectEstudiante.value;
+            const estudiantes = [...new Set(partidas.map(p => p.alumno))].filter(Boolean).sort();
+
+            selectEstudiante.innerHTML = '<option value="">Todos los estudiantes</option>';
+            estudiantes.forEach(estudiante => selectEstudiante.appendChild(new Option(estudiante, estudiante)));
+            selectEstudiante.value = estudiantes.includes(estudianteActual) ? estudianteActual : '';
         }
 
         function aplicarFiltros() {
@@ -425,7 +422,7 @@
 
             const totalPartidas = partidasFiltradas.length;
             const sumaPuntos = partidasFiltradas.reduce((acc, p) => acc + p.puntuacion, 0);
-            const totalErrores = partidasFiltradas.reduce((acc, p) => acc + p.errores.length, 0);
+            const totalErrores = partidasFiltradas.reduce((acc, p) => acc + p.total_errores, 0);
 
             document.getElementById('statPartidas').textContent = totalPartidas;
             document.getElementById('statPromedio').textContent = totalPartidas ? `${Math.round(sumaPuntos / totalPartidas)} pts` : '0 pts';
@@ -444,20 +441,20 @@
             const esAdmin = docenteSesion && docenteSesion.rol === 'admin';
 
             partidasFiltradas.forEach(p => {
-                let erroresHTML = '';
-                if (p.errores.length === 0) {
-                    erroresHTML = `<span class="badge-clean">Sin errores</span>`;
-                } else {
-                    erroresHTML = `<div class="errores-cell">` + p.errores.map(e => 
-                        `<span class="badge-error" title="Esperado: ${e.esp}">${e.op} ➔ Dijo: ${e.det}</span>`
-                    ).join('') + `</div>`;
-                }
+                const erroresHTML = p.errores.length === 0 && p.total_errores === 0
+                    ? `<span class="badge-clean">Sin errores</span>`
+                    : p.errores.length === 0
+                        ? `<span class="badge-error">${p.total_errores} error(es), detalle no disponible</span>`
+                    : `<div class="errores-cell">${p.errores.map(error => `
+                        <span class="badge-error" title="Esperado: ${escaparHTML(error.esperado)} | Detectado: ${escaparHTML(error.mostrado)}">
+                            ${escaparHTML(error.operacion)}: esperaba ${escaparHTML(error.esperado)}, mostró ${escaparHTML(error.mostrado)}
+                        </span>`).join('')}</div>`;
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${p.fecha}</td>
                     ${esAdmin ? `<td><strong>${p.docente}</strong></td>` : ''}
-                    <td><strong>${p.curso}</strong> ${p.periodo ? `<small style="color:var(--text-light)">(${p.periodo})</small>` : ''}</td>
+                    <td><strong>${p.curso}</strong></td>
                     <td>${p.alumno}</td>
                     <td>${p.materia}</td>
                     <td><strong>${p.puntuacion} pts</strong></td>
@@ -466,6 +463,12 @@
                 `;
                 tablaCuerpo.appendChild(tr);
             });
+        }
+
+        function escaparHTML(valor) {
+            return String(valor ?? '').replace(/[&<>'"]/g, caracter => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+            }[caracter]));
         }
 
         function limpiarEstadisticas() {
@@ -493,7 +496,6 @@
                 return coincideDocente && coincidePeriodo && coincideAula && coincideEstudiante && coincideMateria;
             });
 
-            // Header institucional
             doc.setFillColor(79, 70, 229);
             doc.rect(0, 0, 297, 24, 'F');
 
@@ -514,7 +516,7 @@
             const totalPartidas = partidasFiltradas.length;
             const sumaPuntos = partidasFiltradas.reduce((acc, p) => acc + p.puntuacion, 0);
             const promPuntos = totalPartidas ? Math.round(sumaPuntos / totalPartidas) : 0;
-            const totalErrores = partidasFiltradas.reduce((acc, p) => acc + p.errores.length, 0);
+            const totalErrores = partidasFiltradas.reduce((acc, p) => acc + p.total_errores, 0);
 
             doc.setDrawColor(226, 232, 240);
             doc.setFillColor(248, 250, 252);
@@ -528,31 +530,16 @@
             const esAdmin = docenteSesion && docenteSesion.rol === 'admin';
 
             const filas = partidasFiltradas.map(p => {
-                const detalleErrores = p.errores.length === 0 
-                    ? 'Sin errores' 
-                    : p.errores.map(e => `${e.op} (Dijo: ${e.det})`).join(', ');
+                const detErrores = p.errores.length === 0 && p.total_errores === 0
+                    ? 'Sin errores'
+                    : p.errores.length === 0
+                        ? `${p.total_errores} error(es), detalle no disponible`
+                    : p.errores.map(error => `${error.operacion}: esperaba ${error.esperado}, mostró ${error.mostrado}`).join(' | ');
 
                 if (esAdmin) {
-                    return [
-                        p.fecha,
-                        p.docente,
-                        `${p.curso} ${p.periodo ? `(${p.periodo})` : ''}`,
-                        p.alumno,
-                        p.materia,
-                        `${p.puntuacion} pts`,
-                        `${p.tiempo} seg`,
-                        detalleErrores
-                    ];
+                    return [p.fecha, p.docente, p.curso, p.alumno, p.materia, `${p.puntuacion} pts`, `${p.tiempo} seg`, detErrores];
                 } else {
-                    return [
-                        p.fecha,
-                        `${p.curso} ${p.periodo ? `(${p.periodo})` : ''}`,
-                        p.alumno,
-                        p.materia,
-                        `${p.puntuacion} pts`,
-                        `${p.tiempo} seg`,
-                        detalleErrores
-                    ];
+                    return [p.fecha, p.curso, p.alumno, p.materia, `${p.puntuacion} pts`, `${p.tiempo} seg`, detErrores];
                 }
             });
 
@@ -565,16 +552,8 @@
                 head: cabeceras,
                 body: filas,
                 theme: 'striped',
-                headStyles: {
-                    fillColor: [79, 70, 229],
-                    textColor: [255, 255, 255],
-                    fontStyle: 'bold',
-                    fontSize: 9
-                },
-                bodyStyles: {
-                    fontSize: 8.5,
-                    textColor: [15, 23, 42]
-                },
+                headStyles: { fillColor: [79, 70, 229], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9 },
+                bodyStyles: { fontSize: 8.5, textColor: [15, 23, 42] },
                 margin: { left: 14, right: 14 }
             });
 

@@ -181,7 +181,7 @@
       }
     }
 
-    // 2. Cargar Cursos según el Docente seleccionado
+    // 2. Cargar Cursos activos según el Docente seleccionado
     async function cargarCursosPorDocente() {
       const docenteId = document.getElementById('selectDocente').value;
       const selectCurso = document.getElementById('selectCurso');
@@ -201,18 +201,21 @@
       }
 
       try {
+        // El backend solo devuelve cursos vinculados a periodos activos.
         const response = await fetch(`${API_URL}/cursos/docente/${docenteId}`);
         const cursos = await response.json();
 
-        if (cursos.length > 0) {
-          cursos.forEach(curso => {
+        const cursosActivos = Array.isArray(cursos) ? cursos : [];
+
+        if (cursosActivos.length > 0) {
+          cursosActivos.forEach(curso => {
             const id = curso.id_curso || curso.id;
             const nombre = curso.nombre_curso || curso.nombre;
             selectCurso.innerHTML += `<option value="${id}">${nombre}</option>`;
           });
           selectCurso.disabled = false;
         } else {
-          selectCurso.innerHTML = '<option value="">-- No hay cursos asignados a este docente --</option>';
+          selectCurso.innerHTML = '<option value="">-- No hay cursos activos asignados --</option>';
           selectCurso.disabled = true;
         }
       } catch (error) {
