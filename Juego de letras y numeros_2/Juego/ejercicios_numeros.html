@@ -638,30 +638,45 @@
         }
 
         function generateOperations() {
-            let ops = [];
-            
-            while (ops.filter(o => o.type === 'suma').length < 2) {
-                let a = Math.floor(Math.random() * 10);
-                let maxB = 9 - a;
-                let b = Math.floor(Math.random() * (maxB + 1));
-                let res = a + b;
-                
-                if (res !== 4) {
-                    ops.push({ type: 'suma', n1: a, n2: b, opSymbol: '+', result: res });
-                }
-            }
-            
-            while (ops.filter(o => o.type === 'resta').length < 2) {
-                let a = Math.floor(Math.random() * 10);
-                let b = Math.floor(Math.random() * (a + 1));
-                let res = a - b;
-                
-                if (res !== 4) {
-                    ops.push({ type: 'resta', n1: a, n2: b, opSymbol: '-', result: res });
+            const candidates = [];
+            const usedResults = new Set();
+            let zeroOperandCount = 0;
+
+            for (let a = 0; a <= 9; a++) {
+                for (let b = 0; b <= 9 - a; b++) {
+                    candidates.push({ type: 'suma', n1: a, n2: b, opSymbol: '+', result: a + b });
                 }
             }
 
-            return ops.sort(() => 0.5 - Math.random());
+            for (let a = 0; a <= 9; a++) {
+                for (let b = 0; b <= a; b++) {
+                    candidates.push({ type: 'resta', n1: a, n2: b, opSymbol: '-', result: a - b });
+                }
+            }
+
+            candidates.sort(() => 0.5 - Math.random());
+
+            const ops = [];
+            for (const operation of candidates) {
+                const operationZeroCount = (operation.n1 === 0 ? 1 : 0) + (operation.n2 === 0 ? 1 : 0);
+                const sums = ops.filter(item => item.type === 'suma').length;
+                const subtractions = ops.filter(item => item.type === 'resta').length;
+
+                if (usedResults.has(operation.result) ||
+                    zeroOperandCount + operationZeroCount > 1 ||
+                    (operation.type === 'suma' && sums >= 2) ||
+                    (operation.type === 'resta' && subtractions >= 2)) {
+                    continue;
+                }
+
+                ops.push(operation);
+                usedResults.add(operation.result);
+                zeroOperandCount += operationZeroCount;
+
+                if (ops.length === 4) break;
+            }
+
+            return ops;
         }
 
         async function initAI() {
