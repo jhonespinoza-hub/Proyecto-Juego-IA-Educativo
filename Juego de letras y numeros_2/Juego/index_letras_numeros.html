@@ -159,8 +159,14 @@
   <script>
     const API_URL = 'http://localhost:3000/api';
     let mapaAlumnos = {}; // Mapea los nombres en minúsculas con su ID real
+    let cursoDesdeReferencia = false;
 
-    document.addEventListener('DOMContentLoaded', cargarDocentes);
+    document.addEventListener('DOMContentLoaded', cargarPortal);
+
+    async function cargarPortal() {
+      await cargarDocentes();
+      await cargarReferenciaCurso();
+    }
 
     // 1. Cargar lista de Docentes
     async function cargarDocentes() {
@@ -175,9 +181,35 @@
           const nombre = docente.nombre;
           selectDocente.innerHTML += `<option value="${id}">${nombre}</option>`;
         });
+        return true;
       } catch (error) {
         console.error('Error al obtener docentes:', error);
         selectDocente.innerHTML = '<option value="">Error al cargar docentes</option>';
+        return false;
+      }
+    }
+
+    async function cargarReferenciaCurso() {
+      const idCurso = new URLSearchParams(window.location.search).get('curso');
+      if (!idCurso) return;
+
+      try {
+        const response = await fetch(`${API_URL}/cursos/referencia/${encodeURIComponent(idCurso)}`);
+        if (!response.ok) throw new Error('El enlace del curso no está disponible.');
+        const curso = await response.json();
+        const selectDocente = document.getElementById('selectDocente');
+        const selectCurso = document.getElementById('selectCurso');
+
+        selectDocente.value = String(curso.id_docente);
+        cursoDesdeReferencia = true;
+        await cargarCursosPorDocente();
+        selectCurso.value = String(curso.id_curso);
+        await cargarEstudiantes();
+        selectDocente.disabled = true;
+        selectCurso.disabled = true;
+      } catch (error) {
+        console.error('Error al cargar el enlace del curso:', error);
+        mostrarAlerta('Enlace no disponible', error.message, 'error');
       }
     }
 
@@ -291,9 +323,9 @@
         selectCurso.value = "";
         inputEstudiante.value = "";
       } else {
-        selectDocente.disabled = false;
+        selectDocente.disabled = cursoDesdeReferencia;
         if (selectDocente.value) {
-          selectCurso.disabled = false;
+          selectCurso.disabled = cursoDesdeReferencia;
         }
         if (selectCurso.value && Object.keys(mapaAlumnos).length > 0) {
           inputEstudiante.disabled = false;

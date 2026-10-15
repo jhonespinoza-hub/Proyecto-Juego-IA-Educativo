@@ -126,6 +126,33 @@
                 </select>
             </div>
 
+            <form id="form-crear-curso-admin" onsubmit="crearCursoAdmin(event)" class="bg-white p-6 rounded-xl shadow-md border border-slate-200 mb-4">
+                <h2 class="text-lg font-bold text-slate-800 mb-4">Crear curso y asignar docente</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="admin-curso-nombre" class="block text-sm font-semibold text-slate-700 mb-1">Nombre del curso</label>
+                        <input id="admin-curso-nombre" type="text" required placeholder="Ej. Inicial 2 - Grupo A" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label for="admin-curso-periodo" class="block text-sm font-semibold text-slate-700 mb-1">Periodo lectivo</label>
+                        <select id="admin-curso-periodo" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                            <option value="">Selecciona un periodo</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="admin-curso-docente" class="block text-sm font-semibold text-slate-700 mb-1">Docente asignado</label>
+                        <select id="admin-curso-docente" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                            <option value="">Selecciona un docente</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end mt-4">
+                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-lg shadow transition flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Crear y asignar curso
+                    </button>
+                </div>
+            </form>
+
             <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200 overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
@@ -350,6 +377,7 @@
                 if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
                 listaDocentesGlobal = await res.json();
                 renderizarDocentes(listaDocentesGlobal);
+                poblarFormularioCrearCurso();
             } catch (err) {
                 console.error("Error al cargar docentes:", err);
                 document.getElementById('tabla-docentes').innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error al conectar con la API (${err.message})</td></tr>`;
@@ -407,6 +435,7 @@
                 listaPeriodosGlobal = await res.json();
                 renderizarPeriodos(listaPeriodosGlobal);
                 poblarSelectPeriodosFiltro();
+                poblarFormularioCrearCurso();
             } catch (err) {
                 console.error("Error al cargar periodos:", err);
                 document.getElementById('tabla-periodos').innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error al conectar con la API (${err.message})</td></tr>`;
@@ -447,6 +476,18 @@
             const select = document.getElementById('filtro-periodo-curso');
             select.innerHTML = '<option value="todos">Todos los Periodos</option>' + 
                 listaPeriodosGlobal.map(p => `<option value="${p.id_periodo}">${p.nombre_periodo}</option>`).join('');
+        }
+
+        function poblarFormularioCrearCurso() {
+            const selectPeriodo = document.getElementById('admin-curso-periodo');
+            const selectDocente = document.getElementById('admin-curso-docente');
+
+            selectPeriodo.innerHTML = '<option value="">Selecciona un periodo</option>' +
+                listaPeriodosGlobal.map(p => `<option value="${p.id_periodo}">${p.nombre_periodo} (${p.estado || 'Activo'})</option>`).join('');
+            selectDocente.innerHTML = '<option value="">Selecciona un docente</option>' +
+                listaDocentesGlobal
+                    .filter(d => d.rol !== 'admin')
+                    .map(d => `<option value="${d.id_docente}">${d.nombre} (${d.correo})</option>`).join('');
         }
 
         /* --- GESTIÓN DE CURSOS --- */
@@ -507,6 +548,42 @@
             } else {
                 const filtrados = listaCursosGlobal.filter(c => c.id_periodo == idPeriodo);
                 renderizarCursos(filtrados);
+            }
+        }
+
+        async function crearCursoAdmin(event) {
+            event.preventDefault();
+
+            const nombreCurso = document.getElementById('admin-curso-nombre').value.trim();
+            const idPeriodo = document.getElementById('admin-curso-periodo').value;
+            const idDocente = document.getElementById('admin-curso-docente').value;
+
+            if (!nombreCurso || !idPeriodo || !idDocente) {
+                mostrarAlerta('Atención', 'Completa el nombre, periodo y docente del curso.');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/cursos`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nombre_curso: nombreCurso,
+                        id_periodo: idPeriodo,
+                        id_docente: idDocente
+                    })
+                });
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.error || 'No se pudo crear el curso.');
+                }
+
+                document.getElementById('form-crear-curso-admin').reset();
+                await cargarCursos();
+                mostrarAlerta('Curso creado', `El curso "${nombreCurso}" fue creado y asignado correctamente.`);
+            } catch (err) {
+                mostrarAlerta('Error', err.message || 'No se pudo conectar con el servidor.');
             }
         }
 

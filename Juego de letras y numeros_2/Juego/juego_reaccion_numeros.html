@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desafío de Reacción - Números RÁPIDOS</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --secondary: #6366f1;
+            --bg: #f1f5f9;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --border-radius: 24px;
+            --box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+            --gradient-start: #4f46e5;
+            --gradient-end: #818cf8;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            background: radial-gradient(circle at top left, #eef2ff, var(--bg));
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 24px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: white;
+            padding: 24px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        header h1 { font-size: 1.6rem; font-weight: 800; }
+        .header-icon { font-size: 2rem; }
+
+        .header-nav-buttons { display: flex; gap: 10px; align-items: center; }
+
+        .header-info { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+        .info-badge {
+            background: rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(12px);
+            padding: 8px 16px;
+            border-radius: 99px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-reset, .btn-home-header {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            border-radius: 12px;
+            color: white;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.25s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .btn-reset:hover, .btn-home-header:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: translateY(-2px);
+        }
+
+        main {
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .instruction-card {
+            width: 100%;
+            background: #fffbe3;
+            border: 1px solid #fde047;
+            border-left: 5px solid var(--warning);
+            padding: 16px 20px;
+            border-radius: 16px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #854d0e;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        #feedback {
+            width: 100%;
+            font-size: 1.15rem;
+            font-weight: 700;
+            min-height: 56px;
+            text-align: center;
+            padding: 14px 20px;
+            border-radius: 16px;
+            background: #f8fafc;
+            border: 2px dashed var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .game-zone {
+            display: flex;
+            gap: 24px;
+            width: 100%;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .target-card {
+            width: 320px;
+            height: 300px;
+            border: 2px solid var(--border);
+            border-radius: var(--border-radius);
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.03);
+            padding: 20px;
+            position: relative;
+        }
+
+        .operation-badge {
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: var(--bg);
+            padding: 6px 14px;
+            border-radius: 20px;
+        }
+
+        .timer-badge {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--error);
+            background: #fef2f2;
+            padding: 6px 18px;
+            border-radius: 20px;
+            border: 1px solid #fecaca;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 6px rgba(239, 68, 68, 0.12);
+        }
+
+        .number-display {
+            font-size: 6.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1;
+            margin: 5px 0;
+        }
+
+        .camera-card {
+            width: 320px;
+            height: 300px;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            position: relative;
+            background: #0f172a;
+            border: 3px solid var(--secondary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .card-label {
+            position: absolute;
+            top: 14px;
+            left: 16px;
+            font-weight: 800;
+            color: #ffffff;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            padding: 4px 10px;
+            border-radius: 8px;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            z-index: 10;
+        }
+
+        #webcam-container { width: 100%; height: 100%; }
+        #webcam-container canvas { width: 100% !important; height: 100% !important; object-fit: cover; }
+
+        .scanning-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            border: 3px solid rgba(255, 255, 255, 0.15);
+            pointer-events: none;
+            animation: scanning 2s infinite ease-in-out;
+            border-radius: calc(var(--border-radius) - 3px);
+        }
+
+        @keyframes scanning {
+            0%, 100% { border-color: rgba(255, 255, 255, 0.15); }
+            50% { border-color: rgba(99, 102, 241, 0.5); }
+        }
+
+        .progress-container {
+            width: 100%;
+            margin-top: 10px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-weight: 700;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .progress-bar {
+            height: 14px;
+            background-color: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 99px;
+            overflow: hidden;
+            padding: 2px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+            border-radius: 99px;
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-card {
+            background: white;
+            padding: 40px 32px;
+            border-radius: var(--border-radius);
+            text-align: center;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .score-box {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 16px;
+            margin: 20px 0;
+            border: 1px solid var(--border);
+        }
+
+        .score-box h3 { font-size: 2.5rem; color: var(--primary); font-weight: 800; }
+
+        .btn-action {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 14px;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .btn-action-secondary {
+            background: #f1f5f9;
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            padding: 14px 24px;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 14px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        footer {
+            text-align: center;
+            padding: 18px;
+            background: #fafafa;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <span class="header-icon">⚡</span>
+                <h1>Desafío de Reacción (0-9)</h1>
+            </div>
+
+            <div class="header-nav-buttons">
+                <a href="index_letras_numeros.html" class="btn-home-header">🏠 Menú Principal</a>
+            </div>
+
+            <div class="header-info">
+                <div class="info-badge">
+                    <span>⭐</span>
+                    <span id="scoreText">Puntos: 0</span>
+                </div>
+                <div class="info-badge">
+                    <span>🎯</span>
+                    <span id="roundText">Ronda 1 / 5</span>
+                </div>
+                <button id="btnQuickReset" class="btn-reset" title="Reiniciar juego">↺</button>
+            </div>
+        </header>
+
+        <main>
+            <div class="instruction-card">
+                <span style="font-size: 1.5rem;">⏱️</span>
+                <span>¡Rapidez! Muestra la tarjeta del número en pantalla antes de que se agote el tiempo (10s).</span>
+            </div>
+
+            <div id="feedback">Iniciando cámara y modelo de Inteligencia Artificial...</div>
+
+            <div class="game-zone">
+                <div class="target-card">
+                    <div class="operation-badge">Muestra este número</div>
+                    <div id="targetNumber" class="number-display">?</div>
+                    <div id="timerText" class="timer-badge">⏱️ 10.0s</div>
+                </div>
+
+                <div class="camera-card">
+                    <span class="card-label">Tu cámara:</span>
+                    <div id="webcam-container"></div>
+                    <div class="scanning-overlay"></div>
+                </div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-header">
+                    <span>📊 Progreso</span>
+                    <span id="progressText">0/5 rondas completadas</span>
+                </div>
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Entrenamiento de Reacción y Agilidad Visomotora 🎓</p>
+        </footer>
+    </div>
+
+    <!-- Modal de Resultados -->
+    <div id="winModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+            <div style="font-size: 3.5rem; margin-bottom: 10px;">⚡🏆</div>
+            <h2 style="color: var(--text); font-size: 1.8rem; margin-bottom: 10px;">¡Prueba Completada!</h2>
+            <p id="winModalMessage" style="color: var(--text-muted); font-size: 1rem;">
+                Has completado las rondas de agilidad numérica.
+            </p>
+            <div class="score-box">
+                <p style="font-weight: 600; color: var(--text-muted);">PUNTUACIÓN FINAL</p>
+                <h3 id="finalScoreText">0 / 10 Pts</h3>
+            </div>
+            <button id="btnRestart" class="btn-action">↺ Jugar de Nuevo</button>
+            <button id="btnExitMenu" class="btn-action-secondary">🏠 Menú Principal</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+    <script>
+        const URL_MODELO = 'https://teachablemachine.withgoogle.com/models/KW-qv5rO4/';
+
+        let score = 0;
+        let currentRound = 0;
+        const TOTAL_ROUNDS = 5;
+        const TIEMPO_LIMITE_SEGUNDOS = 10; // Cambiado a 10 segundos
+        
+        let roundsNumbers = [];
+        let currentTargetNumber = 0;
+
+        let model, webcam, maxPredictions;
+        let isCameraReady = false;
+        let isProcessingMatch = false;
+
+        let timerInterval = null;
+        let timeRemaining = TIEMPO_LIMITE_SEGUNDOS;
+
+        // Variables de Registro de Partida
+        let startTime = 0;
+        let arrayErrores = [];
+
+        // Elementos DOM
+        const scoreText = document.getElementById('scoreText');
+        const roundText = document.getElementById('roundText');
+        const targetNumberEl = document.getElementById('targetNumber');
+        const timerTextEl = document.getElementById('timerText');
+        const feedback = document.getElementById('feedback');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const winModal = document.getElementById('winModal');
+        const finalScoreText = document.getElementById('finalScoreText');
+
+        // Event Listeners
+        document.getElementById('btnRestart').addEventListener('click', startNewGame);
+        document.getElementById('btnQuickReset').addEventListener('click', startNewGame);
+        document.getElementById('btnExitMenu').addEventListener('click', () => {
+            window.location.href = 'index_letras_numeros.html';
+        });
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.9;
+                utterance.lang = 'es-ES';
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function normalizePredictionLabel(label) {
+            const value = String(label || '').trim().toUpperCase();
+            const wordMap = {
+                'CERO': '0', 'ZERO': '0', 'UNO': '1', 'ONE': '1',
+                'DOS': '2', 'TWO': '2', 'TRES': '3', 'THREE': '3',
+                'CUATRO': '4', 'FOUR': '4', 'CINCO': '5', 'FIVE': '5',
+                'SEIS': '6', 'SIX': '6', 'SIETE': '7', 'SEVEN': '7',
+                'OCHO': '8', 'EIGHT': '8', 'NUEVE': '9', 'NINE': '9'
+            };
+            if (wordMap[value]) return wordMap[value];
+            return value.replace(/[^0-9]/g, '');
+        }
+
+        function isIgnoredClass(label) {
+            const value = String(label || '').trim().toUpperCase();
+            return value.includes('FONDO') || value.includes('NINGUNA') || 
+                   value.includes('BACKGROUND') || value.includes('NONE') || 
+                   value.includes('NADA') || value === '';
+        }
+
+        function generateRandomNumbers() {
+            const numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+            numbers.sort(() => 0.5 - Math.random());
+            return numbers.slice(0, TOTAL_ROUNDS);
+        }
+
+        async function initAI() {
+            try {
+                const modelURL = URL_MODELO + 'model.json';
+                const metadataURL = URL_MODELO + 'metadata.json';
+
+                model = await tmImage.load(modelURL, metadataURL);
+                maxPredictions = model.getTotalClasses();
+
+                webcam = new tmImage.Webcam(340, 290, true);
+                await webcam.setup();
+                await webcam.play();
+
+                document.getElementById('webcam-container').appendChild(webcam.canvas);
+                isCameraReady = true;
+
+                startNewGame();
+                requestAnimationFrame(loop);
+            } catch (e) {
+                feedback.textContent = "⚠️ Error al inicializar la cámara o el modelo";
+                feedback.style.color = "var(--error)";
+                feedback.style.background = "#fef2f2";
+                console.error(e);
+            }
+        }
+
+        async function loop() {
+            if (webcam && isCameraReady) {
+                webcam.update();
+                if (!isProcessingMatch && roundsNumbers.length > 0) {
+                    await predict();
+                }
+            }
+            requestAnimationFrame(loop);
+        }
+
+        function startNewGame() {
+            winModal.style.display = 'none';
+            score = 0;
+            currentRound = 0;
+            startTime = Date.now();
+            arrayErrores = [];
+            scoreText.textContent = `Puntos: ${score}`;
+            roundsNumbers = generateRandomNumbers();
+            loadRound(currentRound);
+        }
+
+        function updateProgress() {
+            const progress = (currentRound / TOTAL_ROUNDS) * 100;
+            progressFill.style.width = `${progress}%`;
+            progressText.textContent = `${currentRound}/${TOTAL_ROUNDS} rondas completadas`;
+        }
+
+        function loadRound(roundIndex) {
+            clearInterval(timerInterval);
+            currentRound = roundIndex;
+            roundText.textContent = `Ronda ${currentRound + 1} / ${TOTAL_ROUNDS}`;
+
+            currentTargetNumber = roundsNumbers[currentRound];
+            targetNumberEl.textContent = currentTargetNumber;
+
+            feedback.textContent = `Muestra rápidamente el número ${currentTargetNumber}`;
+            feedback.style.color = "var(--primary)";
+            feedback.style.background = "var(--bg)";
+
+            updateProgress();
+            speak(`Número ${currentTargetNumber}`);
+
+            timeRemaining = TIEMPO_LIMITE_SEGUNDOS;
+            timerTextEl.textContent = `⏱️ ${timeRemaining.toFixed(1)}s`;
+
+            const startTimeTimer = Date.now();
+            timerInterval = setInterval(() => {
+                const elapsed = (Date.now() - startTimeTimer) / 1000;
+                timeRemaining = Math.max(0, TIEMPO_LIMITE_SEGUNDOS - elapsed);
+                timerTextEl.textContent = `⏱️ ${timeRemaining.toFixed(1)}s`;
+
+                if (timeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    handleTimeOut();
+                }
+            }, 50);
+
+            isProcessingMatch = false;
+        }
+
+        async function predict() {
+            if (!model || !webcam || isProcessingMatch) return;
+
+            const prediction = await model.predict(webcam.canvas);
+            let highestProb = 0;
+            let rawBestClass = "";
+
+            for (let i = 0; i < maxPredictions; i++) {
+                if (prediction[i].probability > highestProb) {
+                    highestProb = prediction[i].probability;
+                    rawBestClass = prediction[i].className;
+                }
+            }
+
+            if (isIgnoredClass(rawBestClass)) return;
+
+            const detectedNumber = normalizePredictionLabel(rawBestClass);
+            if (detectedNumber === "") return;
+
+            if (parseInt(detectedNumber, 10) === currentTargetNumber) {
+                if (highestProb >= 0.85) {
+                    handleSuccessMatch(detectedNumber);
+                }
+            } else {
+                if (highestProb >= 0.80) {
+                    handleErrorMatch(detectedNumber);
+                }
+            }
+        }
+
+        function handleSuccessMatch(detectedNumber) {
+            isProcessingMatch = true;
+            clearInterval(timerInterval);
+
+            score += 2;
+            scoreText.textContent = `Puntos: ${score}`;
+
+            feedback.textContent = `⚡ ¡Increíble! Mostraste el ${detectedNumber} a tiempo (+2 pts).`;
+            feedback.style.color = "var(--success)";
+            feedback.style.background = "#dcfce7";
+
+            speak(`¡Muy bien!`);
+
+            setTimeout(() => {
+                advanceRound();
+            }, 1800);
+        }
+
+        function handleErrorMatch(detectedNumber) {
+            isProcessingMatch = true;
+
+            arrayErrores.push({
+                operacion: `Mostrar ${currentTargetNumber}`,
+                esperado: String(currentTargetNumber),
+                mostrado: String(detectedNumber)
+            });
+
+            feedback.textContent = `❌ Mostraste el ${detectedNumber}, ¡Ese no es! Corrige rápido.`;
+            feedback.style.color = "var(--error)";
+            feedback.style.background = "#fef2f2";
+
+            speak(`Incorrecto, mostraste el ${detectedNumber}`);
+
+            setTimeout(() => {
+                isProcessingMatch = false;
+            }, 1500);
+        }
+
+        function handleTimeOut() {
+            isProcessingMatch = true;
+
+            arrayErrores.push({
+                operacion: `Mostrar ${currentTargetNumber}`,
+                esperado: String(currentTargetNumber),
+                mostrado: "Tiempo Agotado"
+            });
+
+            feedback.textContent = `⏰ ¡Tiempo agotado! No mostraste el número ${currentTargetNumber}.`;
+            feedback.style.color = "var(--error)";
+            feedback.style.background = "#fef2f2";
+
+            speak(`Se acabó el tiempo.`);
+
+            setTimeout(() => {
+                advanceRound();
+            }, 2000);
+        }
+
+        function advanceRound() {
+            if (currentRound + 1 < TOTAL_ROUNDS) {
+                loadRound(currentRound + 1);
+            } else {
+                currentRound = TOTAL_ROUNDS;
+                updateProgress();
+                showWinModal();
+            }
+        }
+
+        async function guardarPartida() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const idAlumno = urlParams.get('id_alumno') || sessionStorage.getItem('estudiante_id');
+            const tiempoSegundos = Math.round((Date.now() - startTime) / 1000);
+
+            if (!idAlumno || idAlumno === 'invitado' || Number.isNaN(Number(idAlumno))) {
+                console.warn('Partida no guardada: no hay un alumno seleccionado.');
+                return;
+            }
+
+            const payload = {
+                id_alumno: Number(idAlumno),
+                puntuacion: score,
+                tiempo: tiempoSegundos,
+                errores: arrayErrores,
+                id_juego: 3
+            };
+
+            try {
+                const response = await fetch('http://localhost:3000/api/partidas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const resData = await response.json();
+                if (!response.ok) throw new Error(resData.error || 'Error al guardar la partida.');
+                console.log("Partida de reacción registrada:", resData);
+            } catch (err) {
+                console.error("Error al registrar la partida:", err);
+            }
+        }
+
+        function showWinModal() {
+            winModal.style.display = 'flex';
+            finalScoreText.textContent = `${score} / 10 Pts`;
+            speak(`¡Prueba terminada! Obtuviste ${score} puntos.`);
+            guardarPartida();
+        }
+
+        window.addEventListener('DOMContentLoaded', initAI);
+    </script>
+</body>
+</html>

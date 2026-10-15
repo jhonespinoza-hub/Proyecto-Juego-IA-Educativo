@@ -452,11 +452,12 @@
                             <tr>
                                 <th>Nombre del Curso / Aula</th>
                                 <th style="text-align: center;">Periodo Lectivo</th>
+                                <th style="text-align: center;">Enlace para estudiantes</th>
                                 <th style="text-align: center;">Acción Rápida</th>
                             </tr>
                         </thead>
                         <tbody id="tablaMisCursosBody">
-                            <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Cargando tus cursos...</td></tr>
+                            <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Cargando tus cursos...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -680,7 +681,7 @@
         function renderTablaMisCursos(cursos) {
             const tbody = document.getElementById('tablaMisCursosBody');
             if (!Array.isArray(cursos) || cursos.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Aún no ha creado cursos. Registre uno arriba.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Aún no ha creado cursos. Registre uno arriba.</td></tr>';
                 return;
             }
 
@@ -689,10 +690,30 @@
                     <td><strong>${c.nombre_curso}</strong></td>
                     <td style="text-align: center;">${c.nombre_periodo || 'N/A'}</td>
                     <td style="text-align: center;">
+                        <a href="${obtenerLinkCurso(c.id_curso)}" target="_blank" rel="noopener" class="btn-edit" style="display: inline-block; background: #0284c7; text-decoration: none;">🔗 Abrir</a>
+                        <button onclick="copiarLinkCurso(${c.id_curso})" class="btn-edit" style="background: #16a34a;">📋 Copiar</button>
+                    </td>
+                    <td style="text-align: center;">
                         <button onclick="irAMatricularDirecto(${c.id_curso})" class="btn-edit" style="background:#0e7490;">+ Matricular Niños</button>
                     </td>
                 </tr>
             `).join('');
+        }
+
+        function obtenerLinkCurso(idCurso) {
+            const url = new URL('index_letras_numeros.html', window.location.href);
+            url.searchParams.set('curso', idCurso);
+            return url.href;
+        }
+
+        async function copiarLinkCurso(idCurso) {
+            const enlace = obtenerLinkCurso(idCurso);
+            try {
+                await navigator.clipboard.writeText(enlace);
+                mostrarNotificacion('Enlace copiado', 'Ya puedes enviarlo a tus estudiantes.');
+            } catch (error) {
+                mostrarNotificacion('No se pudo copiar', enlace, true);
+            }
         }
 
         function fillSelectCursos(elementId, items) {

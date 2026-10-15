@@ -484,6 +484,32 @@ app.get('/api/cursos/docente/:idDocente', async (req, res) => {
     }
 });
 
+app.get('/api/cursos/referencia/:idCurso', async (req, res) => {
+    try {
+        const idCurso = req.params.idCurso;
+        if (!idCurso || !/^\d+$/.test(idCurso)) {
+            return res.status(400).json({ error: 'ID de curso no válido.' });
+        }
+
+        const [rows] = await db.query(`
+            SELECT c.id_curso, c.nombre_curso, d.id_docente, d.nombre AS nombre_docente
+            FROM cursos c
+            INNER JOIN periodos_academicos p ON c.id_periodo = p.id_periodo
+            INNER JOIN docentes d ON c.id_docente = d.id_docente
+            WHERE c.id_curso = ? AND LOWER(TRIM(p.estado)) = 'activo'
+        `, [idCurso]);
+
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'El curso no existe o no está activo.' });
+        }
+
+        res.json(rows[0]);
+    } catch (err) {
+        console.error('Error al consultar el curso de referencia:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.get('/api/alumnos', async (req, res) => {
     const { id_curso } = req.query;
     if (!id_curso) {
