@@ -130,6 +130,15 @@
         .alert { margin-top: 16px; padding: 12px; border-radius: 8px; font-size: 0.85rem; display: none; text-align: center; }
         .alert-success { background: #dcfce7; color: #16a34a; }
         .alert-error { background: #fee2e2; color: #dc2626; }
+
+        @media (max-width: 600px) {
+            body { min-height: 100vh; min-height: 100svh; align-items: flex-start; padding: 76px 12px 20px; }
+            .btn-game { top: 12px; right: 12px; min-height: 44px; }
+            .auth-card { padding: clamp(20px, 6vw, 32px); }
+            .tab-btn, .btn-submit, input { min-height: 48px; font-size: 16px; }
+        }
+
+        button, a, input { touch-action: manipulation; }
     </style>
 </head>
 <body>

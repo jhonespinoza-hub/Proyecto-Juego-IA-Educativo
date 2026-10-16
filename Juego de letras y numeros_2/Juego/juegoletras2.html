@@ -441,6 +441,27 @@
             .interactive-container { flex-direction: column; }
             .card-preview, .camera-view { width: 100%; max-width: 320px; }
         }
+
+        @media (max-width: 600px) {
+            body { min-width: 0; padding: 8px; align-items: flex-start; }
+            .container { width: 100%; }
+            header { padding: 16px 12px; gap: 12px; }
+            header h1 { font-size: clamp(1.25rem, 6vw, 1.75rem); overflow-wrap: anywhere; }
+            .header-left, .header-nav-buttons, .header-info { justify-content: center; flex-wrap: wrap; }
+            .header-nav-buttons > *, .header-info button { min-height: 44px; }
+            main { padding: 16px 12px; }
+            .media-container iframe { height: auto !important; aspect-ratio: 16 / 9; }
+            .interactive-container { gap: 14px; }
+            .card-preview, .camera-view { width: min(100%, 320px); height: auto; aspect-ratio: 1; }
+            .card-preview .image-box { height: min(200px, 54vw); flex: 1; min-height: 0; }
+            .modal-overlay { padding: 12px; overflow-y: auto; }
+            .modal-card { width: 100%; max-height: calc(100svh - 24px); overflow-y: auto; padding: 24px 18px; }
+        }
+
+        button, a, input, select { touch-action: manipulation; }
+        button, a.btn-reset, a.btn-home-header { min-height: 44px; }
+        input, select { font-size: max(16px, 1rem); }
+        .container { width: 100%; }
     </style>
 </head>
 <body>
