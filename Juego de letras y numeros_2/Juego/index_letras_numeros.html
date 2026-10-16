@@ -149,6 +149,7 @@
       <option value="lenguaje">🔤 Lenguaje y Comunicación</option>
       <option value="matematicas">🔢 Matemáticas</option>
       <option value="tangram">🧩 Tangram / Rompecabezas</option>
+      <option value="newton">🧪 Osmo Newton</option>
     </select>
 
     <button id="btnIngresar" class="btn-start" disabled onclick="ingresarAlJuego()">
@@ -367,6 +368,7 @@
         if (materia === 'lenguaje') url = 'juegoletras2.html';
         else if (materia === 'matematicas') url = 'juegonumeros2.html';
         else if (materia === 'tangram') url = 'Tangram.html';
+        else if (materia === 'newton') url = 'newton.html';
 
         if (!url) throw new Error('Materia no válida');
 
