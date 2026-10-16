@@ -480,6 +480,8 @@
     let gameInterval = null;
     let ballSpawner = null;
     let isPlaying = false;
+    let isPaused = false;
+    let hasStartedGame = false;
     let frameCounter = 0;
     let portalAngle = 0;
 
@@ -565,26 +567,34 @@
         return;
       }
 
-      const duration = Number(durationInput.value);
-      if (!Number.isSafeInteger(duration) || duration < 1 || duration > 86400) {
-        feedbackText.innerText = "Elige una duración entre 1 segundo y 24 horas.";
-        durationInput.focus();
-        return;
+      if (!hasStartedGame) {
+        const duration = Number(durationInput.value);
+        if (!Number.isSafeInteger(duration) || duration < 1 || duration > 86400) {
+          feedbackText.innerText = "Elige una duración entre 1 segundo y 24 horas.";
+          durationInput.focus();
+          return;
+        }
+
+        score = 0;
+        timeLeft = duration;
+        engine.timing.timeScale = 1;
+        document.getElementById('scoreVal').innerText = score;
+        document.getElementById('gameOverModal').classList.remove('active');
+        document.getElementById('gameOverTitle').innerText = "¡Tiempo Agotado! 🎉";
+        pelotas.forEach(ball => Composite.remove(engine.world, ball));
+        pelotas = [];
+        hasStartedGame = true;
+      } else if (isPaused) {
+        engine.timing.timeScale = 1;
       }
 
-      score = 0;
-      timeLeft = duration;
       isPlaying = true;
-      document.getElementById('scoreVal').innerText = score;
       document.getElementById('timeVal').innerText = timeLeft + "s";
-      document.getElementById('gameOverModal').classList.remove('active');
-      document.getElementById('gameOverTitle').innerText = "¡Tiempo Agotado! 🎉";
       document.getElementById('btnStart').disabled = true;
       document.getElementById('btnStop').disabled = false;
       durationInput.disabled = true;
-
-      pelotas.forEach(b => Composite.remove(engine.world, b));
-      pelotas = [];
+      document.getElementById('btnStart').innerText = "▶️ Iniciar";
+      isPaused = false;
 
       clearInterval(gameInterval);
       gameInterval = setInterval(() => {
@@ -606,18 +616,37 @@
       }, 1100);
     }
 
-    function endGame(reason = 'time') {
+    function pauseGame() {
       if (!isPlaying) return;
       isPlaying = false;
+      isPaused = true;
       clearInterval(gameInterval);
+      gameInterval = null;
       clearInterval(ballSpawner);
+      ballSpawner = null;
+      engine.timing.timeScale = 0;
+      document.getElementById('btnStart').disabled = false;
+      document.getElementById('btnStop').disabled = true;
+      document.getElementById('btnStart').innerText = "▶️ Continuar";
+      feedbackText.innerText = "Partida en pausa. Pulsa 'Continuar' para seguir.";
+    }
+
+    function endGame() {
+      if (!isPlaying) return;
+      isPlaying = false;
+      isPaused = false;
+      hasStartedGame = false;
+      clearInterval(gameInterval);
+      gameInterval = null;
+      clearInterval(ballSpawner);
+      ballSpawner = null;
+      engine.timing.timeScale = 0;
       document.getElementById('btnStart').disabled = !isCameraReady;
       document.getElementById('btnStop').disabled = true;
+      document.getElementById('btnStart').innerText = "▶️ Iniciar";
       durationInput.disabled = false;
       document.getElementById('finalScore').innerText = score;
-      document.getElementById('gameOverTitle').innerText = reason === 'stopped'
-        ? "¡Partida detenida! ⏹️"
-        : "¡Tiempo agotado! 🎉";
+      document.getElementById('gameOverTitle').innerText = "¡Tiempo agotado! 🎉";
       document.getElementById('gameOverModal').classList.add('active');
     }
 
@@ -630,7 +659,8 @@
       const blur = new cv.Mat();
       const paperMask = new cv.Mat();
       const safePaperMask = new cv.Mat();
-      const paperKernel = cv.Mat.ones(41, 41, cv.CV_8U);
+      const paperKernel = cv.Mat.ones(21, 21, cv.CV_8U);
+      const darkInk = new cv.Mat();
       const thresh = new cv.Mat();
 
       try {
@@ -639,17 +669,19 @@
         cv.subtract(luzLive, grayLive, detalleLive);
         cv.subtract(luzFondo, grayFondo, detalleFondo);
         cv.subtract(detalleLive, detalleFondo, diff);
+        cv.subtract(grayFondo, grayLive, darkInk);
+        cv.max(diff, darkInk, diff);
 
         cv.threshold(grayFondo, paperMask, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU);
         cv.erode(paperMask, safePaperMask, paperKernel);
         cv.bitwise_and(diff, safePaperMask, diff);
-        cv.GaussianBlur(diff, blur, new cv.Size(5, 5), 0);
-        cv.threshold(blur, thresh, 22, 255, cv.THRESH_BINARY);
+        cv.GaussianBlur(diff, blur, new cv.Size(3, 3), 0);
+        cv.threshold(blur, thresh, 18, 255, cv.THRESH_BINARY);
         return thresh.clone();
       } finally {
         luzLive.delete(); luzFondo.delete(); detalleLive.delete(); detalleFondo.delete();
         diff.delete(); blur.delete(); paperMask.delete(); safePaperMask.delete();
-        paperKernel.delete(); thresh.delete();
+        paperKernel.delete(); darkInk.delete(); thresh.delete();
       }
     }
 
@@ -752,7 +784,7 @@
       // 1. Render Video de Fondo suave
       ctx.save();
       ctx.scale(-1, 1);
-      ctx.globalAlpha = 0.45;
+      ctx.globalAlpha = 1;
       ctx.drawImage(video, -GAME_WIDTH, 0, GAME_WIDTH, GAME_HEIGHT);
       ctx.restore();
       ctx.globalAlpha = 1.0;
@@ -836,7 +868,7 @@
     });
 
     document.getElementById('btnStart').addEventListener('click', startGame);
-    document.getElementById('btnStop').addEventListener('click', () => endGame('stopped'));
+    document.getElementById('btnStop').addEventListener('click', pauseGame);
     document.getElementById('btnRestart').addEventListener('click', startGame);
     durationInput.addEventListener('input', () => {
       if (!isPlaying) {
