@@ -125,6 +125,42 @@
       color: var(--text-muted);
     }
 
+    .speed-control {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 14px 18px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .speed-control input[type="range"] {
+      width: min(100%, 280px);
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    .speed-value {
+      min-width: 3.5em;
+      color: var(--primary);
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .speed-hint {
+      width: 100%;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-align: center;
+    }
+
     .header-info {
       display: flex;
       align-items: center;
@@ -445,6 +481,15 @@
         <input id="durationInput" type="number" min="1" max="86400" step="1" value="60" inputmode="numeric">
       </div>
 
+      <div class="speed-control">
+        <label for="ballSpeedInput">Velocidad de las bolas:</label>
+        <span>Lenta</span>
+        <input id="ballSpeedInput" type="range" min="0.5" max="2" step="0.1" value="1" aria-describedby="ballSpeedHint">
+        <span>Rápida</span>
+        <output id="ballSpeedValue" class="speed-value" for="ballSpeedInput" aria-live="polite">1.0×</output>
+        <span id="ballSpeedHint" class="speed-hint">Puedes ajustarla durante la partida; también afecta a las bolas que ya están cayendo.</span>
+      </div>
+
       <div class="game-zone">
         <div class="camera-card">
           <span class="card-label">Vista de Cámara - Área de Trabajo</span>
@@ -486,7 +531,7 @@
   </div>
 
   <script>
-    const { Engine, Runner, Bodies, Composite, Common, Vector } = Matter;
+    const { Engine, Runner, Bodies, Body, Composite, Common, Vector } = Matter;
     if (typeof decomp !== 'undefined') Common.setDecomp(decomp);
 
     const canvas = document.getElementById('physicsCanvas');
@@ -497,6 +542,10 @@
     let score = 0;
     let timeLeft = 60;
     const durationInput = document.getElementById('durationInput');
+    const ballSpeedInput = document.getElementById('ballSpeedInput');
+    const ballSpeedValue = document.getElementById('ballSpeedValue');
+    const BASE_GRAVITY = 1.6;
+    let ballSpeedMultiplier = Number(ballSpeedInput.value);
     let gameInterval = null;
     let ballSpawner = null;
     let isPlaying = false;
@@ -510,7 +559,7 @@
     let pelotas = [];
     let isOpenCvReady = false;
     let isCameraReady = false;
-    let fondoReferencia = null, cap = null, frameRaw = null;
+    let fondoReferencia = null, cap = null, frameRaw = null, frameNormalizado = null;
 
     const GAME_WIDTH = 640;
     const GAME_HEIGHT = 480;
@@ -551,6 +600,7 @@
 
         cap = new cv.VideoCapture(video);
         frameRaw = new cv.Mat(video.videoHeight, video.videoWidth, cv.CV_8UC4);
+        frameNormalizado = new cv.Mat(GAME_HEIGHT, GAME_WIDTH, cv.CV_8UC4);
 
         inicializarMotorFisica();
         isCameraReady = true;
@@ -568,12 +618,41 @@
 
     function inicializarMotorFisica() {
       engine = Engine.create();
-      engine.gravity.y = 1.6;
+      engine.gravity.y = BASE_GRAVITY * ballSpeedMultiplier;
 
       runner = Runner.create();
       Runner.run(runner, engine);
 
       requestAnimationFrame(buclePrincipal);
+    }
+
+    function capturarFrameNormalizado() {
+      cap.read(frameRaw);
+      if (frameRaw.cols !== GAME_WIDTH || frameRaw.rows !== GAME_HEIGHT) {
+        cv.resize(frameRaw, frameNormalizado, new cv.Size(GAME_WIDTH, GAME_HEIGHT), 0, 0, cv.INTER_LINEAR);
+      } else {
+        frameRaw.copyTo(frameNormalizado);
+      }
+      return frameNormalizado;
+    }
+
+    function ajustarVelocidadBolas() {
+      const nextMultiplier = Number(ballSpeedInput.value);
+      if (!Number.isFinite(nextMultiplier) || nextMultiplier < 0.5 || nextMultiplier > 2) return;
+
+      const velocityRatio = nextMultiplier / ballSpeedMultiplier;
+      ballSpeedMultiplier = nextMultiplier;
+      ballSpeedValue.value = `${ballSpeedMultiplier.toFixed(1)}×`;
+      ballSpeedValue.textContent = ballSpeedValue.value;
+
+      if (!engine) return;
+      engine.gravity.y = BASE_GRAVITY * ballSpeedMultiplier;
+      pelotas.forEach(ball => {
+        Body.setVelocity(ball, {
+          x: ball.velocity.x * velocityRatio,
+          y: ball.velocity.y * velocityRatio
+        });
+      });
     }
 
     function startGame() {
@@ -587,7 +666,7 @@
         return;
       }
 
-      if (!hasStartedGame) {
+      if (!hasStartedGame || isPaused) {
         const duration = Number(durationInput.value);
         if (!Number.isSafeInteger(duration) || duration < 1 || duration > 86400) {
           feedbackText.innerText = "Elige una duración entre 1 segundo y 24 horas.";
@@ -647,8 +726,8 @@
       engine.timing.timeScale = 0;
       document.getElementById('btnStart').disabled = false;
       document.getElementById('btnStop').disabled = true;
-      document.getElementById('btnStart').innerText = "▶️ Continuar";
-      feedbackText.innerText = "Partida en pausa. Pulsa 'Continuar' para seguir.";
+      document.getElementById('btnStart').innerText = "▶️ Iniciar de nuevo";
+      feedbackText.innerText = "Partida detenida. Pulsa 'Iniciar de nuevo' para comenzar otra partida.";
     }
 
     function endGame() {
@@ -680,7 +759,6 @@
       const paperMask = new cv.Mat();
       const safePaperMask = new cv.Mat();
       const paperKernel = cv.Mat.ones(21, 21, cv.CV_8U);
-      const darkInk = new cv.Mat();
       const thresh = new cv.Mat();
 
       try {
@@ -689,8 +767,6 @@
         cv.subtract(luzLive, grayLive, detalleLive);
         cv.subtract(luzFondo, grayFondo, detalleFondo);
         cv.subtract(detalleLive, detalleFondo, diff);
-        cv.subtract(grayFondo, grayLive, darkInk);
-        cv.max(diff, darkInk, diff);
 
         cv.threshold(grayFondo, paperMask, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU);
         cv.erode(paperMask, safePaperMask, paperKernel);
@@ -701,14 +777,12 @@
       } finally {
         luzLive.delete(); luzFondo.delete(); detalleLive.delete(); detalleFondo.delete();
         diff.delete(); blur.delete(); paperMask.delete(); safePaperMask.delete();
-        paperKernel.delete(); darkInk.delete(); thresh.delete();
+        paperKernel.delete(); thresh.delete();
       }
     }
 
     function detectarTrazos() {
       if (!isOpenCvReady || video.readyState !== 4 || !fondoReferencia) return;
-
-      cap.read(frameRaw);
 
       let frameLive = new cv.Mat();
       let grayLive = new cv.Mat();
@@ -717,7 +791,7 @@
       let contours = new cv.MatVector();
       let hierarchy = new cv.Mat();
 
-      cv.flip(frameRaw, frameLive, 1);
+      cv.flip(capturarFrameNormalizado(), frameLive, 1);
 
       let rect = new cv.Rect(ROI.x, ROI.y, ROI.width, ROI.height);
       let roiLive = frameLive.roi(rect);
@@ -879,8 +953,7 @@
       if (fondoReferencia) fondoReferencia.delete();
 
       fondoReferencia = new cv.Mat();
-      cap.read(frameRaw);
-      cv.flip(frameRaw, fondoReferencia, 1);
+      cv.flip(capturarFrameNormalizado(), fondoReferencia, 1);
 
       feedbackText.innerText = "Fondo calibrado. Mantén la hoja quieta y dibuja con un trazo oscuro; pulsa 'Iniciar' cuando estés listo.";
       feedbackText.style.color = "#10b981";
@@ -890,6 +963,7 @@
     document.getElementById('btnStart').addEventListener('click', startGame);
     document.getElementById('btnStop').addEventListener('click', pauseGame);
     document.getElementById('btnRestart').addEventListener('click', startGame);
+    ballSpeedInput.addEventListener('input', ajustarVelocidadBolas);
     durationInput.addEventListener('input', () => {
       if (!isPlaying) {
         document.getElementById('timeVal').innerText = durationInput.value
@@ -904,6 +978,7 @@
       if (runner) Runner.stop(runner);
       if (fondoReferencia) fondoReferencia.delete();
       if (frameRaw) frameRaw.delete();
+      if (frameNormalizado) frameNormalizado.delete();
       if (video.srcObject) video.srcObject.getTracks().forEach(track => track.stop());
     });
   </script>
