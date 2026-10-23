@@ -229,7 +229,7 @@
         }
 
         #webcam-container { width: 100%; height: 100%; }
-        #webcam-container canvas { width: 100% !important; height: 100% !important; object-fit: cover; }
+        #webcam-container video { width: 100% !important; height: 100% !important; object-fit: cover; transform: scaleX(-1); }
 
         .scanning-overlay {
             position: absolute;
@@ -392,7 +392,7 @@
         <main>
             <div class="instruction-card">
                 <span style="font-size: 1.5rem;">⏱️</span>
-                <span>¡Rapidez! Muestra la tarjeta del número en pantalla antes de que se agote el tiempo (10s).</span>
+                <span>¡Rapidez! Muestra la tarjeta del número en pantalla antes de que se agote el tiempo (15s).</span>
             </div>
 
             <div id="feedback">Iniciando cámara y modelo de Inteligencia Artificial...</div>
@@ -401,7 +401,7 @@
                 <div class="target-card">
                     <div class="operation-badge">Muestra este número</div>
                     <div id="targetNumber" class="number-display">?</div>
-                    <div id="timerText" class="timer-badge">⏱️ 10.0s</div>
+                    <div id="timerText" class="timer-badge">⏱️ 15.0s</div>
                 </div>
 
                 <div class="camera-card">
@@ -445,15 +445,15 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 
     <script>
-        const URL_MODELO = 'https://teachablemachine.withgoogle.com/models/KW-qv5rO4/';
+        const URL_MODELO_LOCAL = './modelo_numeros_tfjs/model.json';
+        const CLASS_LABELS = [...'0123456789', 'NADA'];
 
         let score = 0;
         let currentRound = 0;
         const TOTAL_ROUNDS = 5;
-        const TIEMPO_LIMITE_SEGUNDOS = 10; // Cambiado a 10 segundos
+        const TIEMPO_LIMITE_SEGUNDOS = 15;
         
         let roundsNumbers = [];
         let currentTargetNumber = 0;
@@ -524,23 +524,51 @@
         }
 
         async function initAI() {
+            let stream;
             try {
-                const modelURL = URL_MODELO + 'model.json';
-                const metadataURL = URL_MODELO + 'metadata.json';
+                model = await tf.loadGraphModel(URL_MODELO_LOCAL);
+                const warmupInput = tf.zeros([1, 224, 224, 3]);
+                let warmupOutput;
+                let outputClasses;
+                try {
+                    warmupOutput = model.predict(warmupInput);
+                    const outputTensors = Array.isArray(warmupOutput) ? warmupOutput : [warmupOutput];
+                    outputClasses = outputTensors[0].shape[outputTensors[0].shape.length - 1];
+                } finally {
+                    tf.dispose(warmupInput);
+                    if (warmupOutput) {
+                        const outputTensors = Array.isArray(warmupOutput) ? warmupOutput : [warmupOutput];
+                        outputTensors.forEach(tensor => tensor.dispose());
+                    }
+                }
+                maxPredictions = CLASS_LABELS.length;
+                if (outputClasses !== maxPredictions) {
+                    throw new Error(`El modelo devuelve ${outputClasses} clases; se esperaban ${maxPredictions}.`);
+                }
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('La cámara requiere HTTPS o localhost.');
+                }
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: { ideal: 340 }, height: { ideal: 290 } },
+                    audio: false
+                });
+                const video = document.createElement('video');
+                video.autoplay = true;
+                video.muted = true;
+                video.playsInline = true;
+                video.srcObject = stream;
+                await video.play();
+                webcam = { video, stream };
 
-                model = await tmImage.load(modelURL, metadataURL);
-                maxPredictions = model.getTotalClasses();
-
-                webcam = new tmImage.Webcam(340, 290, true);
-                await webcam.setup();
-                await webcam.play();
-
-                document.getElementById('webcam-container').appendChild(webcam.canvas);
+                const webcamContainer = document.getElementById('webcam-container');
+                webcamContainer.innerHTML = '';
+                webcamContainer.appendChild(video);
                 isCameraReady = true;
 
                 startNewGame();
                 requestAnimationFrame(loop);
             } catch (e) {
+                if (stream) stream.getTracks().forEach(track => track.stop());
                 feedback.textContent = "⚠️ Error al inicializar la cámara o el modelo";
                 feedback.style.color = "var(--error)";
                 feedback.style.background = "#fef2f2";
@@ -550,7 +578,6 @@
 
         async function loop() {
             if (webcam && isCameraReady) {
-                webcam.update();
                 if (!isProcessingMatch && roundsNumbers.length > 0) {
                     await predict();
                 }
@@ -611,14 +638,27 @@
         async function predict() {
             if (!model || !webcam || isProcessingMatch) return;
 
-            const prediction = await model.predict(webcam.canvas);
+            const predictionTensor = tf.tidy(() => {
+                const pixels = tf.browser.fromPixels(webcam.video);
+                const resized = tf.image.resizeBilinear(pixels, [224, 224]);
+                const mirrored = tf.reverse(resized, [1]);
+                const output = model.predict(mirrored.toFloat().expandDims(0));
+                const outputTensor = Array.isArray(output) ? output[0] : output;
+                return outputTensor.squeeze();
+            });
+            let prediction;
+            try {
+                prediction = await predictionTensor.data();
+            } finally {
+                predictionTensor.dispose();
+            }
             let highestProb = 0;
             let rawBestClass = "";
 
             for (let i = 0; i < maxPredictions; i++) {
-                if (prediction[i].probability > highestProb) {
-                    highestProb = prediction[i].probability;
-                    rawBestClass = prediction[i].className;
+                if (prediction[i] > highestProb) {
+                    highestProb = prediction[i];
+                    rawBestClass = CLASS_LABELS[i];
                 }
             }
 

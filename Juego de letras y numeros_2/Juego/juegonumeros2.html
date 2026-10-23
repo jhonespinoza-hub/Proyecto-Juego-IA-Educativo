@@ -269,7 +269,7 @@
             height: 100%;
         }
 
-        #webcam-container canvas {
+        #webcam-container video {
             width: 100% !important;
             height: 100% !important;
             object-fit: cover;
@@ -594,11 +594,11 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <script src="https://www.youtube.com/iframe_api"></script>
 
     <script>
-        const URL_MODELO = 'https://teachablemachine.withgoogle.com/models/KW-qv5rO4/';
+        const URL_MODELO_LOCAL = './modelo_numeros_tfjs/model.json';
+        const CLASS_LABELS = [...'0123456789', 'NADA'];
 
         const savedConfig = localStorage.getItem('juegoNumerosConfig');
         let config = {
@@ -764,25 +764,51 @@
         }
 
         async function initAI() {
+            let stream;
             try {
                 scanStatusElement.textContent = '🧠 Cargando IA y cámara...';
-                const modelURL = URL_MODELO + 'model.json';
-                const metadataURL = URL_MODELO + 'metadata.json';
-
-                model = await tmImage.load(modelURL, metadataURL);
-                maxPredictions = model.getTotalClasses();
-
-                webcam = new tmImage.Webcam(400, 300, true);
-                await webcam.setup();
-                await webcam.play();
+                model = await tf.loadGraphModel(URL_MODELO_LOCAL);
+                const warmupInput = tf.zeros([1, 224, 224, 3]);
+                let warmupOutput;
+                let outputClasses;
+                try {
+                    warmupOutput = model.predict(warmupInput);
+                    const outputTensors = Array.isArray(warmupOutput) ? warmupOutput : [warmupOutput];
+                    outputClasses = outputTensors[0].shape[outputTensors[0].shape.length - 1];
+                } finally {
+                    tf.dispose(warmupInput);
+                    if (warmupOutput) {
+                        const outputTensors = Array.isArray(warmupOutput) ? warmupOutput : [warmupOutput];
+                        outputTensors.forEach(tensor => tensor.dispose());
+                    }
+                }
+                maxPredictions = CLASS_LABELS.length;
+                if (outputClasses !== maxPredictions) {
+                    throw new Error(`El modelo devuelve ${outputClasses} clases; se esperaban ${maxPredictions}.`);
+                }
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('La cámara requiere HTTPS o localhost.');
+                }
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: { ideal: 400 }, height: { ideal: 300 } },
+                    audio: false
+                });
+                const video = document.createElement('video');
+                video.autoplay = true;
+                video.muted = true;
+                video.playsInline = true;
+                video.srcObject = stream;
+                await video.play();
+                webcam = { video, stream };
 
                 webcamContainerElement.innerHTML = '';
-                webcamContainerElement.appendChild(webcam.canvas);
+                webcamContainerElement.appendChild(video);
                 isCameraReady = true;
                 scanStatusElement.textContent = '📸 Cámara lista - Reproduce el vídeo para empezar';
                 
                 requestAnimationFrame(loop);
             } catch (err) {
+                if (stream) stream.getTracks().forEach(track => track.stop());
                 console.error(err);
                 scanStatusElement.textContent = '⚠️ Error al iniciar cámara/modelo';
             }
@@ -790,7 +816,6 @@
 
         async function loop() {
             if (webcam && isCameraReady) {
-                webcam.update();
                 if (scanActive && !isProcessingMatch) {
                     await predict();
                 }
@@ -801,16 +826,29 @@
         async function predict() {
             if (!model || !webcam) return;
 
-            const prediction = await model.predict(webcam.canvas);
+            const predictionTensor = tf.tidy(() => {
+                const pixels = tf.browser.fromPixels(webcam.video);
+                const resized = tf.image.resizeBilinear(pixels, [224, 224]);
+                const mirrored = tf.reverse(resized, [1]);
+                const output = model.predict(mirrored.toFloat().expandDims(0));
+                const outputTensor = Array.isArray(output) ? output[0] : output;
+                return outputTensor.squeeze();
+            });
+            let prediction;
+            try {
+                prediction = await predictionTensor.data();
+            } finally {
+                predictionTensor.dispose();
+            }
             const expectedNumber = checkpoints[currentCheckpoint]?.number;
 
             let highestProbability = 0;
             let bestClass = '';
 
             for (let i = 0; i < maxPredictions; i++) {
-                if (prediction[i].probability > highestProbability) {
-                    highestProbability = prediction[i].probability;
-                    bestClass = prediction[i].className;
+                if (prediction[i] > highestProbability) {
+                    highestProbability = prediction[i];
+                    bestClass = CLASS_LABELS[i];
                 }
             }
 

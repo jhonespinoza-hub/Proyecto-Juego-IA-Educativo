@@ -211,11 +211,12 @@
             height: 100%;
         }
 
-        #webcam-container canvas {
+        #webcam-container video {
             width: 100%;
             height: 100%;
             object-fit: cover;
             display: block;
+            transform: scaleX(-1);
         }
 
         .scanning-overlay {
@@ -558,10 +559,10 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 
     <script>
-        const URL_MODELO = 'https://teachablemachine.withgoogle.com/models/xPDHahLlZ/';
+        const URL_MODELO_LOCAL = './modelo_tfjs/model.json';
+        const CLASS_LABELS = [...'ABCDEFGHIJKLMN', 'NADA', ...'OPQRSTUVWXYZ', 'Ñ'];
 
         const BANCO_PALABRAS = [
             { word: "AVION", img: "img/avion.png" },
@@ -672,7 +673,7 @@
                 'F': 'F', 'G': 'G', 'H': 'H', 'I': 'I', 'J': 'J'
             };
             if (wordMap[value]) return wordMap[value];
-            return value.replace(/[^A-Z]/g, '');
+            return value.replace(/[^A-ZÑ]/g, '');
         }
 
         function isIgnoredClass(label) {
@@ -686,25 +687,52 @@
         }
 
         async function initAI() {
+            let stream;
             try {
-                const modelURL = URL_MODELO + "model.json";
-                const metadataURL = URL_MODELO + "metadata.json";
+                model = await tf.loadGraphModel(URL_MODELO_LOCAL);
+                const warmupInput = tf.zeros([1, 224, 224, 3]);
+                let warmupOutput;
+                let outputClasses;
+                try {
+                    warmupOutput = model.predict(warmupInput);
+                    const outputTensors = Array.isArray(warmupOutput) ? warmupOutput : [warmupOutput];
+                    outputClasses = outputTensors[0].shape[outputTensors[0].shape.length - 1];
+                } finally {
+                    tf.dispose(warmupInput);
+                    if (warmupOutput) {
+                        const outputTensors = Array.isArray(warmupOutput) ? warmupOutput : [warmupOutput];
+                        outputTensors.forEach(tensor => tensor.dispose());
+                    }
+                }
+                maxPredictions = CLASS_LABELS.length;
+                if (outputClasses !== maxPredictions) {
+                    throw new Error(`El modelo devuelve ${outputClasses} clases; se esperaban ${maxPredictions}.`);
+                }
 
-                model = await tmImage.load(modelURL, metadataURL);
-                maxPredictions = model.getTotalClasses();
-
-                webcam = new tmImage.Webcam(320, 320, true);
-                await webcam.setup();
-                await webcam.play();
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('La cámara requiere HTTPS o localhost.');
+                }
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 320 } },
+                    audio: false
+                });
+                const video = document.createElement('video');
+                video.autoplay = true;
+                video.muted = true;
+                video.playsInline = true;
+                video.srcObject = stream;
+                await video.play();
+                webcam = { video, stream };
 
                 const webcamContainer = document.getElementById('webcam-container');
                 webcamContainer.innerHTML = '';
-                webcamContainer.appendChild(webcam.canvas);
+                webcamContainer.appendChild(video);
                 isCameraReady = true;
 
                 startNewGame();
                 requestAnimationFrame(loop);
             } catch (e) {
+                if (stream) stream.getTracks().forEach(track => track.stop());
                 showFeedback("⚠️ Error al iniciar la cámara o el modelo.", "feedback-warning");
                 console.error(e);
             }
@@ -712,7 +740,6 @@
 
         async function loop() {
             if (webcam && isCameraReady) {
-                webcam.update();
                 if (!isProcessingMatch && selectedWords.length > 0) {
                     await predict();
                 }
@@ -794,7 +821,19 @@
             if (!model || !webcam || isProcessingMatch) return;
             if (Date.now() - lastDetectionTime < 3500) return;
 
-            const prediction = await model.predict(webcam.canvas);
+            const prediction = tf.tidy(() => {
+                const pixels = tf.browser.fromPixels(webcam.video);
+                const resized = tf.image.resizeBilinear(pixels, [224, 224]);
+                const mirrored = tf.reverse(resized, [1]);
+                const output = model.predict(mirrored.toFloat().expandDims(0));
+                return Array.isArray(output) ? output[0] : output;
+            });
+            let probabilities;
+            try {
+                probabilities = await prediction.data();
+            } finally {
+                prediction.dispose();
+            }
             const currentWord = selectedWords[currentRound].word;
             const targetChar = currentWord[activeIndicesToFill[currentTargetIndex]];
 
@@ -802,9 +841,9 @@
             let rawBestClass = "";
 
             for (let i = 0; i < maxPredictions; i++) {
-                if (prediction[i].probability > highestProb) {
-                    highestProb = prediction[i].probability;
-                    rawBestClass = prediction[i].className;
+                if (probabilities[i] > highestProb) {
+                    highestProb = probabilities[i];
+                    rawBestClass = CLASS_LABELS[i];
                 }
             }
 
