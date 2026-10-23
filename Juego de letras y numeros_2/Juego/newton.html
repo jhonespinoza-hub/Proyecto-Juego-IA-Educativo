@@ -473,7 +473,7 @@
     <main>
       <div class="instruction-card">
         <span>💡</span>
-        <span>Coloca una hoja blanca bien iluminada, sin moverla, y presiona <strong>Calibrar</strong> antes de dibujar con un lápiz o marcador oscuro. Luego guía las partículas hacia el objetivo.</span>
+        <span>Coloca una hoja blanca bien iluminada, sin moverla, y presiona <strong>Calibrar</strong> antes de dibujar con un lápiz o marcador oscuro. Luego guía las bolas hacia la canasta.</span>
       </div>
 
       <div class="duration-control">
@@ -531,7 +531,7 @@
   </div>
 
   <script>
-    const { Engine, Runner, Bodies, Body, Composite, Common, Vector } = Matter;
+    const { Engine, Runner, Bodies, Body, Composite, Common } = Matter;
     if (typeof decomp !== 'undefined') Common.setDecomp(decomp);
 
     const canvas = document.getElementById('physicsCanvas');
@@ -552,8 +552,8 @@
     let isPaused = false;
     let hasStartedGame = false;
     let frameCounter = 0;
-    let portalAngle = 0;
-
+    let basketMoveElapsedSeconds = 0;
+    let basketPositionIndex = 0;
     let engine, runner;
     let trazosFisicos = [];
     let pelotas = [];
@@ -564,7 +564,12 @@
     const GAME_WIDTH = 640;
     const GAME_HEIGHT = 480;
     const ROI = { x: 30, y: 30, width: 580, height: 420 };
-    const target = { x: 480, y: 360, radius: 35 };
+    const basketPositions = [
+      { x: 520, label: 'derecha' },
+      { x: 320, label: 'centro' },
+      { x: 120, label: 'izquierda' }
+    ];
+    const target = { x: basketPositions[0].x, y: 360, openingWidth: 58 };
 
     function onOpenCvReady() {
       isOpenCvReady = true;
@@ -666,7 +671,7 @@
         return;
       }
 
-      if (!hasStartedGame || isPaused) {
+      if (!hasStartedGame) {
         const duration = Number(durationInput.value);
         if (!Number.isSafeInteger(duration) || duration < 1 || duration > 86400) {
           feedbackText.innerText = "Elige una duración entre 1 segundo y 24 horas.";
@@ -682,6 +687,9 @@
         document.getElementById('gameOverTitle').innerText = "¡Tiempo Agotado! 🎉";
         pelotas.forEach(ball => Composite.remove(engine.world, ball));
         pelotas = [];
+        basketPositionIndex = 0;
+        basketMoveElapsedSeconds = 0;
+        target.x = basketPositions[basketPositionIndex].x;
         hasStartedGame = true;
       } else if (isPaused) {
         engine.timing.timeScale = 1;
@@ -699,7 +707,19 @@
       gameInterval = setInterval(() => {
         timeLeft--;
         document.getElementById('timeVal').innerText = timeLeft + "s";
-        if (timeLeft <= 0) endGame();
+        if (timeLeft <= 0) {
+          endGame();
+          return;
+        }
+
+        basketMoveElapsedSeconds++;
+        if (basketMoveElapsedSeconds >= 20) {
+          basketMoveElapsedSeconds = 0;
+          basketPositionIndex = (basketPositionIndex + 1) % basketPositions.length;
+          const nextPosition = basketPositions[basketPositionIndex];
+          target.x = nextPosition.x;
+          feedbackText.innerText = `La canasta se movió a la posición ${nextPosition.label}.`;
+        }
       }, 1000);
 
       clearInterval(ballSpawner);
@@ -849,8 +869,11 @@
       for (let i = pelotas.length - 1; i >= 0; i--) {
         const ball = pelotas[i];
         
-        const distToTarget = Vector.magnitude(Vector.sub(ball.position, target));
-        if (distToTarget < target.radius) {
+        const crossedBasketOpening =
+          ball.positionPrev.y < target.y &&
+          ball.position.y >= target.y &&
+          Math.abs(ball.position.x - target.x) <= target.openingWidth / 2 - 11;
+        if (crossedBasketOpening) {
           score += 10;
           document.getElementById('scoreVal').innerText = score;
           Composite.remove(engine.world, ball);
@@ -868,8 +891,6 @@
     /* RENDERIZADO ALINEADO CON EL ESTILO PURPLE/INDIGO */
     function buclePrincipal() {
       frameCounter++;
-      portalAngle += 0.02;
-
       if (frameCounter % 2 === 0) detectarTrazos();
       if (isPlaying) actualizarLogicaPelotas();
 
@@ -883,26 +904,45 @@
       ctx.restore();
       ctx.globalAlpha = 1.0;
 
-      // 2. Objetivo Animado (Portal con degradado verde éxito)
+      // 2. Canasta: tablero, red y aro
       ctx.save();
-      ctx.translate(target.x, target.y);
-      ctx.shadowColor = '#10b981';
-      ctx.shadowBlur = 15;
-      
-      ctx.beginPath();
-      ctx.arc(0, 0, target.radius, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(16, 185, 129, 0.2)';
-      ctx.strokeStyle = '#10b981';
+      ctx.shadowColor = 'rgba(15, 23, 42, 0.35)';
+      ctx.shadowBlur = 8;
+      ctx.fillStyle = '#f8fafc';
+      ctx.strokeStyle = '#334155';
       ctx.lineWidth = 3;
-      ctx.fill();
+      ctx.fillRect(target.x + 38, target.y - 67, 12, 76);
+      ctx.strokeRect(target.x + 38, target.y - 67, 12, 76);
+
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(target.x + 38, target.y - 42, 12, 30);
+
+      ctx.beginPath();
+      ctx.moveTo(target.x - 34, target.y - 5);
+      ctx.lineTo(target.x - 23, target.y + 42);
+      ctx.lineTo(target.x + 23, target.y + 42);
+      ctx.lineTo(target.x + 34, target.y - 5);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.lineWidth = 2;
       ctx.stroke();
 
-      // Anillo de rotación interno
-      ctx.rotate(portalAngle);
       ctx.beginPath();
-      ctx.arc(0, 0, target.radius - 8, 0, Math.PI * 1.5);
+      ctx.moveTo(target.x - 28, target.y + 5);
+      ctx.lineTo(target.x + 28, target.y + 5);
+      ctx.moveTo(target.x - 25, target.y + 17);
+      ctx.lineTo(target.x + 25, target.y + 17);
+      ctx.moveTo(target.x - 23, target.y + 29);
+      ctx.lineTo(target.x + 23, target.y + 29);
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.ellipse(target.x, target.y, 42, 10, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = '#f97316';
+      ctx.lineWidth = 6;
       ctx.stroke();
       ctx.restore();
 
